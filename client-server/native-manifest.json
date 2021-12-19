@@ -1,0 +1,16 @@
+{
+  "name": "com.connective.signer",
+  "description": "Connective Extension",
+  "path": "connective-proxy.py",
+  "type": "stdio",
+  "allowed_extensions": [
+    "{4f643bc8-78f5-49c6-8efd-78ee30289f0b}"
+  ],
+  "allowed_origins": [
+	"chrome-extension://kclpjmhngbacampgcdojmiedamjbgjjm/",
+    "chrome-extension://iakejplkonnlkckfmnkmnjonjldbhpfa/",
+    "chrome-extension://hjldggdfakblnppfaijhaioieincmlln/",
+    "chrome-extension://fccadhkefgbjhhmhaifdjgabjjjhenek/",
+    "chrome-extension://agapehmkpebacbgojngbpmcojkimlllf/"
+  ]
+}
