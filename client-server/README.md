@@ -1,6 +1,6 @@
-# connective-shit alternative solution
+# connective-plugin-linux alternative solution
 
-This is the alternative version of connective-shit, using two networked machines where one of them is running the official Connective Native application. It is tested using the Windows executable but it may work under Mac OS/X as well.
+This is the alternative version of connective-plugin-linux, using two networked machines where one of them is running the official Connective Native application. It is tested using the Windows executable but it may work under Mac OS/X as well.
 
 ## Requirements
 
@@ -14,7 +14,7 @@ This is basically the same as for the main solution, just run the `get_connectiv
 
 ### Installing the browser plugin
 
-This should be straightforward. Go to the `connective-downloads` directory created in the previous step and open `connective_signing_extension-1.0.4.xpi` in your web browser and follow the installation instructions.
+This should be straightforward. Go to the `connective-downloads` directory created in the previous step, open `connective_signing_extension-1.0.4.xpi` in your web browser and follow the installation instructions.
 
 ### Installing the proxy
 

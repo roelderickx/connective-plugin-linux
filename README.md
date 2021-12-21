@@ -1,19 +1,19 @@
-# connective-shit
+# connective-plugin-linux
 
-A replacement for the Connective Plugin which is used on several websites to log in or sign documents using a card reader and an electronic identity card. There is only official support for Windows and Mac, so this application is primarily focused on Linux support. The acronym shit stands for SHady Identity Transmission.
+A replacement for the Connective Plugin which is used on several websites to log in or sign documents using a card reader and an electronic identity card. There is only official support for Windows and Mac, so this application is primarily focused on Linux support.
 
 ## Limitations
 
 This application is only tested with a [VASCO Digipass 870](https://www.onespan.com/products/card-readers/digipass-870). It may work for other card readers with a keypad, but card readers without keypad are not supported. Adding this is trivial though, once you have the right hardware. Look at the TODO comments in the code to find out more if you'd like to contribute.
 
-There is also one security feature which is not implemented, because the algorithm is unknown. Whether this [security through obscurity](https://en.wikipedia.org/wiki/Security_through_obscurity) feature is really improving the security or not is up for debate, but you should be aware that using this application you may send your personal data to anyone on the internet.
+There is also one security feature which is not implemented, because the algorithm is unknown. Whether this [security through obscurity](https://en.wikipedia.org/wiki/Security_through_obscurity) feature is really improving the security or not is debatable, but you should be aware that your personal data may be sent to anyone on the internet when using this application.
 
 ## Alternative
 
 You can find an alternative solution in the client-server directory. With this solution the browser plugin is installed in Linux, but all commands to the backend are sent over the network to a Windows machine where you should connect the card reader.
 
 There are obvious disadvantages with this solution. First of all your identity is transferred unencrypted over the network, which may be visible by anyone, but apart from that you will have to walk from one computer to another while logging in.
-The advantage is that all security features and all hardware is supported, since the official backend is used. It was implemented with the intention to run the backend under [wine](https://www.winehq.org/), but wine has incomplete support for smartcards.
+The advantage is that all security features and all hardware are supported, since the official backend is used. It was implemented with the intention to run the backend under [wine](https://www.winehq.org/), but unfortunately wine has incomplete support for smartcards.
 
 You may still opt to use this solution if you can run Windows in a virtual machine. See the README.md file in the client-server directory for installation instructions.
 
@@ -30,7 +30,7 @@ To obtain the necessary files run the `get_connective_plugin.py` script included
 
 ### Installing the browser plugin
 
-This should be straightforward. Go to the `connective-downloads` directory created in the previous step and open `connective_signing_extension-1.0.4.xpi` in your web browser and follow the installation instructions.
+This should be straightforward. Go to the `connective-downloads` directory created in the previous step, open `connective_signing_extension-1.0.4.xpi` in your web browser and follow the installation instructions.
 
 ### Installing the backend
 
