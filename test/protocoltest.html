@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Connective-plugin-linux protocol tester</title>
+    <script>
+        function connectiveRequest(request) {
+            //var request = {"cmd":"GET_INFO","isRequest":true};
+            window.postMessage(JSON.parse(request), "*");
+            document.getElementById('response').innerHTML = 'Request sent: <code>' + request + '</code>';
+        }
+    </script>
+</head>
+<body>
+    <h1>Connective-plugin-linux protocol tester</h1>
+    <ul>
+    <li>GET_INFO: <code>{"cmd":"GET_INFO","isRequest":true}</code>
+    <li>GET_READERS: <code>{"cmd":"GET_READERS","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
+    <li>READ_FILE: <code>{"cmd":"READ_FILE","reader":"VASCO DIGIPASS 870 [CCID] 00 00","fileId":"3F00DF014031","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
+    <li>READ_FILE: <code>{"cmd":"READ_FILE","reader":"VASCO DIGIPASS 870 [CCID] 00 00","fileId":"3F00DF005038","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
+    <li>READ_FILE: <code>{"cmd":"READ_FILE","reader":"VASCO DIGIPASS 870 [CCID] 00 00","fileId":"3F00DF005039","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
+    <li>COMPUTE_AUTHENTICATION: <code>{"cmd":"COMPUTE_AUTHENTICATION","reader":"VASCO DIGIPASS 870 [CCID] 00 00","hash":"31CD354EACB4F4B43ACADFBC75D6E178E53CDB09FEE0B8A063932BDEECC56AC4","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
+    </ul>
+    <br/>
+    <textarea id="request" cols="100" rows="7"></textarea>
+    <br/>
+    <button onclick="connectiveRequest(document.getElementById('request').value)">Send request</button>
+    <p/><hr/><p/>
+    <div id="response"></div>
+</body>
+</html>
+
