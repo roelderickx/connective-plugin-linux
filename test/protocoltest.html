@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <title>Connective-plugin-linux protocol tester</title>
     <script>
+        window.addEventListener('message', (event) => {
+              document.getElementById('responsereceived').innerHTML = 'Response received: <code>' + JSON.stringify(event.data) + '</code>';
+            }, false);
+
         function connectiveRequest(request) {
-            //var request = {"cmd":"GET_INFO","isRequest":true};
             window.postMessage(JSON.parse(request), "*");
-            document.getElementById('response').innerHTML = 'Request sent: <code>' + request + '</code>';
+            document.getElementById('requestsent').innerHTML = 'Request sent: <code>' + request + '</code>';
         }
     </script>
 </head>
@@ -26,7 +29,8 @@
     <br/>
     <button onclick="connectiveRequest(document.getElementById('request').value)">Send request</button>
     <p/><hr/><p/>
-    <div id="response"></div>
+    <div id="requestsent"></div>
+    <div id="responsereceived"></div>
 </body>
 </html>
 
