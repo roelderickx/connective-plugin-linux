@@ -106,6 +106,21 @@ class BeIdCard:
                 self.connection = None
 
 
+    def __send_apdu(self, apdu):
+        data, sw1, sw2 = self.connection.transmit(apdu)
+        if len(data) == 0:
+            if sw1 == 0x61:
+                return self.__send_apdu([ 0x00, 0xC0, 0x00, 0x00, sw2 ])
+            if sw1 == 0x6C:
+                # TODO v1.8 cards need a delay of 50ms here
+                return self.__send_apdu(apdu[0:4] + [ sw2 ] + apdu[5:])
+        elif len(data) == 256:
+            while sw1 == 0x61:
+                extra_bytes, sw1, sw2 = self.__send_apdu([ 0x00, 0xC0, 0x00, 0x00, sw2 ])
+                data.extend(extra_bytes)
+        return data, sw1, sw2
+
+
     def __select_applet(self):
         if self.connection:
             data, sw1, sw2 = self.connection.transmit(APPLET_AID)
@@ -119,12 +134,12 @@ class BeIdCard:
 
     def __get_instance(self):
         if self.connection:
-            data, sw1, sw2 = self.connection.transmit(BELPIC_AID)
+            data, sw1, sw2 = self.__send_apdu(BELPIC_AID)
             if sw1 == 0x6A and sw2 in [ 0x82, 0x86 ]:
                 # Perhaps the applet is no longer selected
                 self.applet_selected = self.__select_applet()
                 if self.applet_selected:
-                    data, sw1, sw2 = self.connection.transmit(BELPIC_AID)
+                    data, sw1, sw2 = self.__send_apdu(BELPIC_AID)
             if sw1 == 0x90 and sw2 == 0x00:
                 return True
             else:
@@ -139,7 +154,7 @@ class BeIdCard:
         '''
         bin_file_id = smartcard.util.toBytes(file_id)
         request_data = [ 0x00, 0xA4, 0x08, 0x0C, len(bin_file_id) ] + bin_file_id
-        data, sw1, sw2 = self.connection.transmit(request_data)
+        data, sw1, sw2 = self.__send_apdu(request_data)
         if sw1 == 0x90 and sw2 == 0x00:
             return True
         else:
@@ -155,22 +170,13 @@ class BeIdCard:
         length = 0
         while length >= 0:
             request_data = [ 0x00, 0xB0, int(offset / 256), offset % 256, length ]
-            data, sw1, sw2 = self.connection.transmit(request_data)
+            data, sw1, sw2 = self.__send_apdu(request_data)
             if sw1 == 0x90 and sw2 == 0x00:
                 file_contents.extend(data)
                 if len(data) != 256:
                     length = -1
                 else:
                     offset += 256
-            elif sw1 == 0x6C:
-                request_data = [ 0x00, 0xB0, int(offset / 256), offset % 256, sw2 ]
-                # TODO v1.8 cards need a delay of 50ms here
-                data, sw1, sw2 = self.connection.transmit(request_data)
-                file_contents.extend(data)
-                length = -1
-            elif sw1 == 0x6B and sw2 == 0x00:
-                # offset outside the file
-                length = -1
             else:
                  # general error
                 length = -1
@@ -270,7 +276,7 @@ class BeIdCard:
             #                    The next byte is 0x2y, where y is the length of the PIN
             #                    Followed by the PIN code, decoded in the high and low nibbles and
             #                    padded by 0xFF - e.g. [ 0x12, 0x34, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF ]
-            #data, sw1, sw2 = self.connection.transmit([ 0x00, 0x20, 0x00, 0x01, 0x08,
+            #data, sw1, sw2 = self.__send_apdu([ 0x00, 0x20, 0x00, 0x01, 0x08,
             #                                            0x24, 0x12, 0x34,
             #                                            0xFF, 0xFF, 0xFF, 0xFF, 0xFF ])
             pass
@@ -295,26 +301,15 @@ class BeIdCard:
         first to fulfill the access conditions.
         '''
         # select RSASSA-PKCS1_v15 SHA256 algorithm (0x08) and authentication once (0x82)
-        data, sw1, sw2 = self.connection.transmit([ 0x00, 0x22, 0x41, 0xB6, 0x05,
-                                                    0x04, 0x80, 0x08, 0x84, 0x82 ])
+        data, sw1, sw2 = self.__send_apdu([ 0x00, 0x22, 0x41, 0xB6, 0x05,
+                                            0x04, 0x80, 0x08, 0x84, 0x82 ])
         if sw1 == 0x90 and sw2 == 0x00:
             bin_data_to_sign = smartcard.util.toBytes(data_to_sign)
             request_data = [ 0x00, 0x2A, 0x9E, 0x9A, len(bin_data_to_sign) ] + \
-                                                                     bin_data_to_sign + [ 0x00 ]
-            data, sw1, sw2 = self.connection.transmit(request_data)
+                             bin_data_to_sign + [ 0x00 ]
+            data, sw1, sw2 = self.__send_apdu(request_data)
             if sw1 == 0x90 and sw2 == 0x00:
                 return smartcard.util.toHexString(data).replace(' ', '')
-            elif sw1 == 0x61:
-                # get_response needed with sw2 length
-                response = []
-                while sw2 > 0:
-                    request_data = [ 0x00, 0xC0, 0x00, 0x00, sw2 ]
-                    data, sw1, sw2 = self.connection.transmit(request_data)
-                    if sw1 in [ 0x61, 0x90 ]:
-                        response.append(data)
-                    else:
-                        return None
-                return smartcard.util.toHexString(response).replace(' ', '')
             else:
                 return None
         else:
@@ -322,7 +317,7 @@ class BeIdCard:
 
 
     def log_off(self):
-        data, sw1, sw2 = connection.transmit([ 0x80, 0xE6, 0x00, 0x00 ])
+        data, sw1, sw2 = self.__send_apdu([ 0x80, 0xE6, 0x00, 0x00 ])
         if sw1 == 0x90 and sw2 == 0x00:
             return True
         else:
