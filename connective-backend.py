@@ -162,6 +162,12 @@ class BeIdCard:
                     length = -1
                 else:
                     offset += 256
+            elif sw1 == 0x6C:
+                request_data = [ 0x00, 0xB0, int(offset / 256), offset % 256, sw2 ]
+                # TODO v1.8 cards need a delay of 50ms here
+                data, sw1, sw2 = self.connection.transmit(request_data)
+                file_contents.extend(data)
+                length = -1
             elif sw1 == 0x6B and sw2 == 0x00:
                 # offset outside the file
                 length = -1
@@ -368,7 +374,7 @@ def process_get_readers():
 
 def process_read_file(request_json):
     request_reader = request_json['reader'] if 'reader' in request_json else None
-    request_file_id = request_json['fileId'] if 'reader' in request_json else None
+    request_file_id = request_json['fileId'] if 'fileId' in request_json else None
     if not request_reader or not request_file_id:
         return get_error(99, 'No request received after 10 seconds')
 
