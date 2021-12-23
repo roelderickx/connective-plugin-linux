@@ -304,6 +304,17 @@ class BeIdCard:
             data, sw1, sw2 = self.connection.transmit(request_data)
             if sw1 == 0x90 and sw2 == 0x00:
                 return smartcard.util.toHexString(data).replace(' ', '')
+            elif sw1 == 0x61:
+                # get_response needed with sw2 length
+                response = []
+                while sw2 > 0:
+                    request_data = [ 0x00, 0xC0, 0x00, 0x00, sw2 ]
+                    data, sw1, sw2 = self.connection.transmit(request_data)
+                    if sw1 in [ 0x61, 0x90 ]:
+                        response.append(data)
+                    else:
+                        return None
+                return smartcard.util.toHexString(response).replace(' ', '')
             else:
                 return None
         else:
