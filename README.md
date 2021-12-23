@@ -19,7 +19,10 @@ You may still opt to use this solution if you can run Windows in a virtual machi
 
 ## Requirements
 
-The backend runs under Python. To communicate with the card reader the [pyscard](https://github.com/LudovicRousseau/pyscard) module is used. Installing the backend also requires the [nativemessaging](https://github.com/Rayquaza01/nativemessaging) module, but this is not mandatory to run the code. If you know how to install the manifest for native messaging applications you can skip this requirement.
+The backend runs under Python, but you need to have a few modules installed:
+- [tkinter](https://docs.python.org/3/library/tkinter.html) to display messageboxes and dialogs while signing.
+- [pyscard](https://github.com/LudovicRousseau/pyscard) to communicate with the card reader the
+- [nativemessaging](https://github.com/Rayquaza01/nativemessaging) to install the backend, but this is not mandatory to run the code. If you know how to install the manifest for native messaging applications you can skip this requirement.
 
 ## Installation
 
