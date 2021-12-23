@@ -304,6 +304,14 @@ class BeIdCard:
             return None
 
 
+    def log_off(self):
+        data, sw1, sw2 = connection.transmit([ 0x80, 0xE6, 0x00, 0x00 ])
+        if sw1 == 0x90 and sw2 == 0x00:
+            return True
+        else:
+            return False
+
+
 
 def log(message):
     sys.stderr.write(message + '\n')
@@ -397,6 +405,7 @@ def process_compute_authentication(request_json):
         signature = None
         if is_authenticated:
             signature = beid_card.sign(request_hash)
+            ignore_result = beid_card.log_off()
 
         # TODO not sure about this section, not tested with wrong or blocked PIN code
         response = {}
