@@ -17,6 +17,11 @@ APPLET_AID = [ 0x00, 0xA4, 0x04, 0x00, 0x0F, 0xA0, 0x00, 0x00, 0x00, 0x30, 0x29,
 BELPIC_AID = [ 0x00, 0xA4, 0x04, 0x0C, 0x0C, 0xA0, 0x00, 0x00, 0x01, 0x77, 0x50, 0x4B,
                0x43, 0x53, 0x2D, 0x31, 0x35 ]
 
+if sys.platform == "darwin":
+    MAX_APDU_READ_LEN = 248
+else:
+    MAX_APDU_READ_LEN = 252
+
 CCID_VERIFY_START = 0x01
 CCID_VERIFY_FINISH = 0x02
 CCID_VERIFY_DIRECT = 0x06
@@ -110,14 +115,12 @@ class BeIdCard:
         data, sw1, sw2 = self.connection.transmit(apdu)
         if len(data) == 0:
             if sw1 == 0x61:
-                return self.__send_apdu([ 0x00, 0xC0, 0x00, 0x00, sw2 ])
+                while sw1 == 0x61:
+                    extra_data, sw1, sw2 = self.connection.transmit([ 0x00, 0xC0, 0x00, 0x00, sw2 ])
+                    data.extend(extra_data)
             if sw1 == 0x6C:
                 # TODO v1.8 cards need a delay of 50ms here
-                return self.__send_apdu(apdu[0:4] + [ sw2 ] + apdu[5:])
-        elif len(data) == 256:
-            while sw1 == 0x61:
-                extra_bytes, sw1, sw2 = self.__send_apdu([ 0x00, 0xC0, 0x00, 0x00, sw2 ])
-                data.extend(extra_bytes)
+                return self.connection.transmit(apdu[0:4] + [ sw2 ] + apdu[5:])
         return data, sw1, sw2
 
 
@@ -167,20 +170,23 @@ class BeIdCard:
         '''
         file_contents = []
         offset = 0
-        length = 0
-        while length >= 0:
-            request_data = [ 0x00, 0xB0, int(offset / 256), offset % 256, length ]
+        is_eof = False
+        while not is_eof:
+            request_data = [ 0x00, 0xB0, int(offset / 256), offset % 256, MAX_APDU_READ_LEN ]
             data, sw1, sw2 = self.__send_apdu(request_data)
             if sw1 == 0x90 and sw2 == 0x00:
                 file_contents.extend(data)
-                if len(data) != 256:
-                    length = -1
-                else:
-                    offset += 256
+                offset += len(data)
+            elif sw1 == 0x6B and sw2 == 0x00:
+                # offset beyond eof
+                is_eof = True
             else:
-                 # general error
-                length = -1
+                # general error
+                is_eof = True
                 file_contents = None
+
+            if len(data) < MAX_APDU_READ_LEN:
+                is_eof = True
         return file_contents
 
 
@@ -277,8 +283,8 @@ class BeIdCard:
             #                    Followed by the PIN code, decoded in the high and low nibbles and
             #                    padded by 0xFF - e.g. [ 0x12, 0x34, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF ]
             #data, sw1, sw2 = self.__send_apdu([ 0x00, 0x20, 0x00, 0x01, 0x08,
-            #                                            0x24, 0x12, 0x34,
-            #                                            0xFF, 0xFF, 0xFF, 0xFF, 0xFF ])
+            #                                    0x24, 0x12, 0x34,
+            #                                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF ])
             pass
 
         if sw1 == 0x63 and sw2 >= 0xC0 and sw2 <= 0xCF:
