@@ -12,6 +12,8 @@ import tkinter.messagebox
 import smartcard
 import smartcard.util
 
+DEBUG = True
+
 APPLET_AID = [ 0x00, 0xA4, 0x04, 0x00, 0x0F, 0xA0, 0x00, 0x00, 0x00, 0x30, 0x29, 0x05,
                0x70, 0x00, 0xAD, 0x13, 0x10, 0x01, 0x01, 0xFF ]
 BELPIC_AID = [ 0x00, 0xA4, 0x04, 0x0C, 0x0C, 0xA0, 0x00, 0x00, 0x01, 0x77, 0x50, 0x4B,
@@ -32,6 +34,11 @@ CCID_CHANGE_DIRECT = 0x07
 class CardReaders:
     def __init__(self):
         self.card_readers = smartcard.System.readers()
+
+
+    def find_reader(self, reader_name):
+        card_reader_list = [ r for r in self.card_readers if r.name == reader_name]
+        return card_reader_list[0] if len(card_reader_list) > 0 else None
 
 
     def amount_readers(self):
@@ -77,14 +84,22 @@ class CardReaders:
 
 # ref https://github.com/Fedict/eid-mw/blob/master/doc/sdk/documentation/Applet%201.7%20eID%20Cards/Public_Belpic_Applet_v1%207_Ref_Manual%20-%20A01.pdf
 class BeIdCard:
-    def __init__(self, reader):
-        card_readers = smartcard.System.readers()
-        card_reader_list = [ r for r in card_readers if r.name == reader]
-        self.card_reader = card_reader_list[0] if len(card_reader_list) > 0 else None
+    def __init__(self, card_reader):
+        self.card_reader = card_reader
         self.connection = None
         self.__connect()
         self.applet_selected = self.__select_applet()
         self.get_instance = self.__get_instance()
+
+        # Card data
+        self.__serialnr = None
+        self.__appletversion = None
+        self.__6c_delay = 0
+        self.card_data = self.__get_card_data()
+
+        log('Card serial nr: %s' % smartcard.util.toHexString(self.__serialnr).replace(' ', ''))
+        log('Card applet version: %x' % self.__appletversion)
+        log('Card 0x6C delay required: %d ms' % self.__6c_delay)
 
         # Card reader ioctls, to be detected
         self.__ioctls_detected = False
@@ -99,7 +114,6 @@ class BeIdCard:
     def __del__(self):
         if self.connection:
             self.connection.disconnect()
-            time.sleep(0.5) # otherwise card may become unresponsive at the next connection
 
 
     def __connect(self):
@@ -119,7 +133,7 @@ class BeIdCard:
                     extra_data, sw1, sw2 = self.connection.transmit([ 0x00, 0xC0, 0x00, 0x00, sw2 ])
                     data.extend(extra_data)
             if sw1 == 0x6C:
-                # TODO v1.8 cards need a delay of 50ms here
+                time.sleep(self.__6c_delay / 1000)
                 return self.connection.transmit(apdu[0:4] + [ sw2 ] + apdu[5:])
         return data, sw1, sw2
 
@@ -149,6 +163,28 @@ class BeIdCard:
                 return False
         else:
             return False
+
+
+    def __get_card_data(self):
+        if self.connection:
+            # Get Card Data (compatible with all applets)
+            data, sw1, sw2 = self.__send_apdu([ 0x80, 0xE4, 0x00, 0x00, 0x1C ])
+            if sw1 == 0x90 and sw2 == 0x00 and len(data) > 23:
+                self.__serialnr = data[0:16]
+                self.__appletversion = data[21]
+
+                if self.__appletversion >= 0x18:
+                    # Use applet 1.8-specific extended card data
+                    data, sw1, sw2 = self.__send_apdu([ 0x80, 0xE4, 0x00, 0x01, 0x1F ])
+
+                if data[22] == 0x00 and data[23] == 0x01:
+                    self.__6c_delay = 50
+            else:
+                return None
+
+            return data
+        else:
+            return None
 
 
     def select_file(self, file_id):
@@ -332,7 +368,8 @@ class BeIdCard:
 
 
 def log(message):
-    sys.stderr.write(message + '\n')
+    if DEBUG:
+        sys.stderr.write(message + '\n')
 
 
 def read_native_message():
@@ -343,13 +380,13 @@ def read_native_message():
 
     text_length = struct.unpack('@I', text_length_bytes)[0]
     text = str(sys.stdin.buffer.read(text_length), 'utf-8')
-    #log('IN ' + text)
+    log('IN ' + text)
 
     return text
 
 
 def send_native_message(response):
-    #log('OUT ' + response)
+    log('OUT ' + response)
     response_bytes = bytes(response, 'utf-8')
     sys.stdout.buffer.write(struct.pack('@I', len(response_bytes)))
     sys.stdout.buffer.write(response_bytes)
@@ -390,7 +427,9 @@ def process_read_file(request_json):
     if not request_reader or not request_file_id:
         return get_error(99, 'No request received after 10 seconds')
 
-    beid_card = BeIdCard(request_reader)
+    card_readers = CardReaders()
+    card_reader = card_readers.find_reader(request_reader)
+    beid_card = BeIdCard(card_reader)
     if not beid_card.card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
     elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
@@ -413,7 +452,9 @@ def process_compute_authentication(request_json):
     if not request_reader or not request_hash:
         return get_error(99, 'No request received after 10 seconds')
 
-    beid_card = BeIdCard(request_reader)
+    card_readers = CardReaders()
+    card_reader = card_readers.find_reader(request_reader)
+    beid_card = BeIdCard(card_reader)
     if not beid_card.card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
     elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
@@ -467,7 +508,8 @@ try:
                                                         % (request, request_json['cmd']))
 except json.decoder.JSONDecodeError:
     response_json = get_error(99, 'No request received after 10 seconds')
-except:
+except Exception as e:
+    log(e)
     # any other exception - exit gracefully
     response_json = get_error(99, 'No request received after 10 seconds')
 
