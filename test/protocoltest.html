@@ -5,12 +5,18 @@
     <title>Connective-plugin-linux protocol tester</title>
     <script>
         window.addEventListener('message', (event) => {
-              document.getElementById('responsereceived').innerHTML = 'Response received: <code>' + JSON.stringify(event.data) + '</code>';
+                if (JSON.stringify(event.data) != document.getElementById('request').value)
+                {
+                    document.getElementById('responsereceived').innerHTML = 
+                            'Response received: <code>' + JSON.stringify(event.data) + '</code>';
+                }
             }, false);
 
         function connectiveRequest(request) {
             window.postMessage(JSON.parse(request), "*");
-            document.getElementById('requestsent').innerHTML = 'Request sent: <code>' + request + '</code>';
+            document.getElementById('requestsent').innerHTML =
+                            'Request sent: <code>' + request + '</code>';
+            document.getElementById('responsereceived').innerHTML = '';
         }
     </script>
 </head>
