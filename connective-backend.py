@@ -8,6 +8,8 @@ import json
 import time
 
 import tkinter.messagebox
+import tkinter as tk
+import tkinter.font as font
 
 import smartcard
 import smartcard.util
@@ -30,6 +32,149 @@ CCID_VERIFY_DIRECT = 0x06
 CCID_CHANGE_START = 0x03
 CCID_CHANGE_FINISH = 0x04
 CCID_CHANGE_DIRECT = 0x07
+
+MAX_PIN_LENGTH = 12
+
+class NumpadWindow(tk.Frame):
+    def __init__(self, master=None):
+        tk.Frame.__init__(self, master)
+        self.master = master
+        self.pack(fill=tk.BOTH, expand=1)
+
+        self.master.wm_title("Connective")
+        self.master.resizable(False, False)
+
+        text_large_font = font.Font(size=16)
+        self.text_pincode = tk.Label(self, font=text_large_font, width=12)
+        self.text_pincode.grid(row=1, column=1 ,columnspan=3)
+        self.pincode = ''
+
+        button_large_font = font.Font(size=24, weight='bold')
+        button_1 = tk.Button(self, text="1", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_1)
+        button_1.grid(row=2, column=1)
+        button_2 = tk.Button(self, text="2", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_2)
+        button_2.grid(row=2, column=2)
+        button_3 = tk.Button(self, text="3", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_3)
+        button_3.grid(row=2, column=3)
+        button_4 = tk.Button(self, text="4", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_4)
+        button_4.grid(row=3, column=1)
+        button_5 = tk.Button(self, text="5", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_5)
+        button_5.grid(row=3, column=2)
+        button_6 = tk.Button(self, text="6", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_6)
+        button_6.grid(row=3, column=3)
+        button_7 = tk.Button(self, text="7", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_7)
+        button_7.grid(row=4, column=1)
+        button_8 = tk.Button(self, text="8", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_8)
+        button_8.grid(row=4, column=2)
+        button_9 = tk.Button(self, text="9", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_9)
+        button_9.grid(row=4, column=3)
+        button_c = tk.Button(self, text="C", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_c)
+        button_c.grid(row=5, column=1)
+        button_0 = tk.Button(self, text="0", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_0)
+        button_0.grid(row=5, column=2)
+        button_ok = tk.Button(self, text="Ok", font=button_large_font, width=3, height=2, \
+                             command=self.click_button_ok)
+        button_ok.grid(row=5, column=3)
+
+        self.master.bind("<Key>", self.key_pressed)
+
+
+    def __add_code(self, char):
+        if len(self.pincode) < MAX_PIN_LENGTH and char in '1234567890':
+            self.pincode += char
+            self.text_pincode.config(text='*' * len(self.pincode))
+        elif len(self.pincode) > 0 and char in [ chr(8), 'c', 'C' ]:
+            self.pincode = self.pincode[:-1]
+            self.text_pincode.config(text='*' * len(self.pincode))
+        elif char in [ chr(27), 'q', 'Q' ]:
+            self.pincode = ''
+            self.master.destroy()
+        elif char == chr(13):
+            self.master.destroy()
+
+
+    def click_button_1(self):
+        self.__add_code('1')
+
+
+    def click_button_2(self):
+        self.__add_code('2')
+
+
+    def click_button_3(self):
+        self.__add_code('3')
+
+
+    def click_button_4(self):
+        self.__add_code('4')
+
+
+    def click_button_5(self):
+        self.__add_code('5')
+
+
+    def click_button_6(self):
+        self.__add_code('6')
+
+
+    def click_button_7(self):
+        self.__add_code('7')
+
+
+    def click_button_8(self):
+        self.__add_code('8')
+
+
+    def click_button_9(self):
+        self.__add_code('9')
+
+
+    def click_button_0(self):
+        self.__add_code('0')
+
+
+    def click_button_c(self):
+        self.__add_code('c')
+
+
+    def click_button_ok(self):
+        self.__add_code(chr(13))
+
+
+    def key_pressed(self, event):
+        self.__add_code(event.char)
+
+
+    def get_pincode(self):
+        return self.pincode
+
+
+    def get_pincode_as_hex(self):
+        pincode_list = [ ]
+        # add pincode in high and low nibbles
+        for index, digit in enumerate(numpad.pincode):
+            if index % 2 == 0:
+                pincode_list.append(int(digit) * 16 + 15)
+            else:
+                pincode_list[int(index / 2)] += int(digit) - 15
+        # pad with 0xFF
+        while len(pincode_list) < 6:
+            pincode_list.append(0xFF)
+
+        return pincode_list
+
+
 
 class CardReaders:
     def __init__(self):
@@ -313,16 +458,15 @@ class BeIdCard:
             sw1 = data[0]
             sw2 = data[1]
         else:
-            # TODO if no keypad on cardreader, ask user for PIN code via on-screen dialog and send
-            # an MVP:VERIFY message.
-            # Message structure: [ 0x00, 0x20, 0x00, 0x01, 0x08 ]
-            #                    The next byte is 0x2y, where y is the length of the PIN
-            #                    Followed by the PIN code, decoded in the high and low nibbles and
-            #                    padded by 0xFF - e.g. [ 0x12, 0x34, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF ]
-            #data, sw1, sw2 = self.__send_apdu([ 0x00, 0x20, 0x00, 0x01, 0x08,
-            #                                    0x24, 0x12, 0x34,
-            #                                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF ])
-            pass
+            root = tk.Tk()
+            numpad = NumpadWindow(root)
+            root.mainloop()
+
+            if len(numpad.pincode) > 0:
+                # verify pincode
+                data, sw1, sw2 = self.__send_apdu([ 0x00, 0x20, 0x00, 0x01, 0x08,
+                                                    0x20 + len(numpad.pincode) ] + \
+                                                    numpad.get_pincode_as_hex() + [ 0xFF ])
 
         if sw1 == 0x63 and sw2 >= 0xC0 and sw2 <= 0xCF:
             # PIN incorrect - untested
