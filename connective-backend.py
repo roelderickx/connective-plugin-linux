@@ -654,7 +654,7 @@ try:
 except json.decoder.JSONDecodeError:
     response_json = get_error(99, 'No request received after 10 seconds')
 except Exception as e:
-    log(e)
+    log(str(e))
     # any other exception - exit gracefully
     response_json = get_error(99, 'No request received after 10 seconds')
 
