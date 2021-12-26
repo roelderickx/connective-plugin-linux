@@ -97,9 +97,10 @@ class BeIdCard:
         self.__6c_delay = 0
         self.card_data = self.__get_card_data()
 
-        log('Card serial nr: %s' % smartcard.util.toHexString(self.__serialnr).replace(' ', ''))
-        log('Card applet version: %x' % self.__appletversion)
-        log('Card 0x6C delay required: %d ms' % self.__6c_delay)
+        if self.card_data:
+            log('Card serial nr: %s' % smartcard.util.toHexString(self.__serialnr).replace(' ', ''))
+            log('Card applet version: %x' % self.__appletversion)
+            log('Card 0x6C delay required: %d ms' % self.__6c_delay)
 
         # Card reader ioctls, to be detected
         self.__ioctls_detected = False
@@ -134,7 +135,7 @@ class BeIdCard:
                     data.extend(extra_data)
             if sw1 == 0x6C:
                 time.sleep(self.__6c_delay / 1000)
-                return self.connection.transmit(apdu[0:4] + [ sw2 ] + apdu[5:])
+                data, sw1, sw2 = self.connection.transmit(apdu[0:4] + [ sw2 ] + apdu[5:])
         return data, sw1, sw2
 
 
