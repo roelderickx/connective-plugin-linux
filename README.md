@@ -4,7 +4,9 @@ A replacement for the Connective Plugin which is used on several websites to log
 
 ## Limitations
 
-This application is only tested with a [VASCO Digipass 870](https://www.onespan.com/products/card-readers/digipass-870). It may work for other card readers with a keypad, but card readers without keypad are not supported. Adding this is trivial though, once you have the right hardware. Look at the TODO comments in the code to find out more if you'd like to contribute.
+This application is tested with a [VASCO Digipass 870](https://www.onespan.com/products/card-readers/digipass-870), which has a keypad, and an [Alcor Micro AU9560](https://www.alcorlink.com/product-AU9560-USB.html) (sold under the Mya brand) without keypad. It probably works for most card readers supported by Linux.
+
+At the moment there is only support for Belgian electronic identity cards. You're welcome to create a pull request to add support for other cards but keep in mind I am unable to test this before merging.
 
 There is also one security feature which is not implemented, because the algorithm is unknown. Whether this [security through obscurity](https://en.wikipedia.org/wiki/Security_through_obscurity) feature is really improving the security or not is debatable, but you should be aware that your personal data may be sent to anyone on the internet when using this application.
 
