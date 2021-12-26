@@ -93,10 +93,10 @@ class NumpadWindow(tk.Frame):
     def __add_code(self, char):
         if len(self.pincode) < MAX_PIN_LENGTH and char in '1234567890':
             self.pincode += char
-            self.text_pincode.config(text=self.pincode)
+            self.text_pincode.config(text='*' * len(self.pincode))
         elif len(self.pincode) > 0 and char in [ chr(8), 'c', 'C' ]:
             self.pincode = self.pincode[:-1]
-            self.text_pincode.config(text=self.pincode)
+            self.text_pincode.config(text='*' * len(self.pincode))
         elif char in [ chr(27), 'q', 'Q' ]:
             self.pincode = ''
             self.master.destroy()
@@ -154,6 +154,25 @@ class NumpadWindow(tk.Frame):
 
     def key_pressed(self, event):
         self.__add_code(event.char)
+
+
+    def get_pincode(self):
+        return self.pincode
+
+
+    def get_pincode_as_hex(self):
+        pincode_list = [ ]
+        # add pincode in high and low nibbles
+        for index, digit in enumerate(numpad.pincode):
+            if index % 2 == 0:
+                pincode_list.append(int(digit) * 16 + 15)
+            else:
+                pincode_list[int(index / 2)] += int(digit) - 15
+        # pad with 0xFF
+        while len(pincode_list) < 6:
+            pincode_list.append(0xFF)
+
+        return pincode_list
 
 
 
@@ -443,23 +462,10 @@ class BeIdCard:
             root.mainloop()
 
             if len(numpad.pincode) > 0:
-                pincode_list = [ ]
-                # add pincode in high and low nibbles
-                for index, digit in enumerate(numpad.pincode):
-                    if index % 2 == 0:
-                        # set high nibble to digit and low nibble to 0xF
-                        pincode_list.append(int(digit) * 16 + 15)
-                    else:
-                        # replace 0xF in low nibble by digit
-                        pincode_list[int(index / 2)] += int(digit) - 15
-                # pad with 0xFF
-                while len(pincode_list) < 6:
-                    pincode_list.append(0xFF)
-
                 # verify pincode
                 data, sw1, sw2 = self.__send_apdu([ 0x00, 0x20, 0x00, 0x01, 0x08,
                                                     0x20 + len(numpad.pincode) ] + \
-                                                    pincode_list + [ 0xFF ])
+                                                    numpad.get_pincode_as_hex() + [ 0xFF ])
 
         if sw1 == 0x63 and sw2 >= 0xC0 and sw2 <= 0xCF:
             # PIN incorrect - untested
