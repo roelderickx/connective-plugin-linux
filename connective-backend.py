@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # -*- coding: utf-8 -*-
 
@@ -50,39 +50,23 @@ class NumpadWindow(tk.Frame):
         self.pincode = ''
 
         button_large_font = font.Font(size=24, weight='bold')
-        button_1 = tk.Button(self, text="1", font=button_large_font, width=3, height=2, \
-                             command=self.click_button_1)
-        button_1.grid(row=2, column=1)
-        button_2 = tk.Button(self, text="2", font=button_large_font, width=3, height=2, \
-                             command=self.click_button_2)
-        button_2.grid(row=2, column=2)
-        button_3 = tk.Button(self, text="3", font=button_large_font, width=3, height=2, \
-                             command=self.click_button_3)
-        button_3.grid(row=2, column=3)
-        button_4 = tk.Button(self, text="4", font=button_large_font, width=3, height=2, \
-                             command=self.click_button_4)
-        button_4.grid(row=3, column=1)
-        button_5 = tk.Button(self, text="5", font=button_large_font, width=3, height=2, \
-                             command=self.click_button_5)
-        button_5.grid(row=3, column=2)
-        button_6 = tk.Button(self, text="6", font=button_large_font, width=3, height=2, \
-                             command=self.click_button_6)
-        button_6.grid(row=3, column=3)
-        button_7 = tk.Button(self, text="7", font=button_large_font, width=3, height=2, \
-                             command=self.click_button_7)
-        button_7.grid(row=4, column=1)
-        button_8 = tk.Button(self, text="8", font=button_large_font, width=3, height=2, \
-                             command=self.click_button_8)
-        button_8.grid(row=4, column=2)
-        button_9 = tk.Button(self, text="9", font=button_large_font, width=3, height=2, \
-                             command=self.click_button_9)
-        button_9.grid(row=4, column=3)
+        buttons = []
+        for i in range(10):
+          if i == 0:
+            button_r = 5
+            button_c = 2
+          else:
+            button_r = (i - 1) // 3 + 2
+            button_c = (i - 1) % 3 + 1
+          b = tk.Button(self, text=i, font=button_large_font, \
+                        width=3, height=2, \
+                        command=lambda i=i: self.click_button(i))
+          b.grid(row=button_r, column=button_c)
+          buttons.append(b)
+
         button_c = tk.Button(self, text="C", font=button_large_font, width=3, height=2, \
                              command=self.click_button_c)
         button_c.grid(row=5, column=1)
-        button_0 = tk.Button(self, text="0", font=button_large_font, width=3, height=2, \
-                             command=self.click_button_0)
-        button_0.grid(row=5, column=2)
         button_ok = tk.Button(self, text="Ok", font=button_large_font, width=3, height=2, \
                              command=self.click_button_ok)
         button_ok.grid(row=5, column=3)
@@ -104,44 +88,8 @@ class NumpadWindow(tk.Frame):
             self.master.destroy()
 
 
-    def click_button_1(self):
-        self.__add_code('1')
-
-
-    def click_button_2(self):
-        self.__add_code('2')
-
-
-    def click_button_3(self):
-        self.__add_code('3')
-
-
-    def click_button_4(self):
-        self.__add_code('4')
-
-
-    def click_button_5(self):
-        self.__add_code('5')
-
-
-    def click_button_6(self):
-        self.__add_code('6')
-
-
-    def click_button_7(self):
-        self.__add_code('7')
-
-
-    def click_button_8(self):
-        self.__add_code('8')
-
-
-    def click_button_9(self):
-        self.__add_code('9')
-
-
-    def click_button_0(self):
-        self.__add_code('0')
+    def click_button(self,c):
+        self.__add_code(('%d' % c))
 
 
     def click_button_c(self):
@@ -659,4 +607,3 @@ except Exception as e:
     response_json = get_error(99, 'No request received after 10 seconds')
 
 send_native_message(json.dumps(response_json))
-
