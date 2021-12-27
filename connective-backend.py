@@ -163,7 +163,7 @@ class NumpadWindow(tk.Frame):
     def get_pincode_as_hex(self):
         pincode_list = [ ]
         # add pincode in high and low nibbles
-        for index, digit in enumerate(numpad.pincode):
+        for index, digit in enumerate(self.pincode):
             if index % 2 == 0:
                 pincode_list.append(int(digit) * 16 + 15)
             else:
