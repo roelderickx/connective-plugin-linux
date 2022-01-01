@@ -22,19 +22,14 @@ This script will be started by your browser whenever the Connective Browser Plug
 
 First of all, open the file `connective-proxy.py` and modify the HOST variable on top to the ip address or hostname of the machine where the card reader is connected.
 
-Next, install nativemessaging using `pip install nativemessaging` and run `nativemessaging-install.py firefox` or `nativemessaging-install.py chrome` depending on your browser. For other browsers you have to investigate where to install `native-manifest.json`. Make sure you run this command from the client-server directory to install the correct native messaging application.
-
-Note that the nativemessaging package is not required for the proxy to run, you can uninstall it afterwards. A possible addition would be to install the proxy automatically by the backend for user convenience.
-
-Also note that the full path to the proxy is saved in your browser's native messaging configuration. This means that if you want to move the proxy to another location after installation you are also required to re-run `nativemessaging-install.py` with the appropriate parameter.
+Next, install the nativemessaging package and run `nativemessaging-install.py firefox` or `nativemessaging-install.py chrome` depending on your browser. Make sure you run this command from the client-server directory to install the correct native messaging application. A modified version of `native-manifest.json` will be installed in your browser's configuration, containing the full path to `connective-proxy.py`. Keep this in mind when you want to move the proxy to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
 
 ### Installing the host
 
-Extract the native application from the installer using 7zip: `7z x connective-downloads/connective-plugin-installer-local-2.0.9.msi firefox.extension.native`. Note we are extracting the Firefox version, the Chrome version is identical. Rename the file to `extension-native.exe` to avoid confusion.
+Extract the native application from the installer using 7zip: `7z x connective-downloads/connective-plugin-installer-local-2.0.9.msi firefox.extension.native`. You can also extract the chrome version, but it doesn't matter since both versions are identical. Rename the file to `extension-native.exe` to avoid confusion.
 
 Copy both `extension-native.exe` and `connective-host.py` to the host machine and modify the HOST variable on top to the ip address where the server should listen. It is the public ip address of the machine where the card reader is connected and where `connective-host.py` will run.
 
 ## Use
 
 The host should be running on the machine where the card reader is connected before trying to log in or sign a document on the machine where the proxy is installed.
-
