@@ -699,6 +699,17 @@ def process_compute_signature(request_json):
     return response
 
 
+def process_compute_sign_challenge(request_json):
+    not_found_fields_error = \
+            verify_required_fields(request_json, [ 'language', 'transaction', 'hash' ])
+    if not_found_fields_error:
+        return not_found_fields_error
+
+    # TODO implement
+
+    return get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
+                                                        % (request_json, request_json['cmd']))
+
 
 request = read_native_message()
 response_json = {}
@@ -729,6 +740,8 @@ try:
         response_json = process_verify_pin(request_json)
     elif request_json['cmd'] == 'COMPUTE_SIGNATURE':
         response_json = process_compute_signature(request_json)
+    elif request_json['cmd'] == 'COMPUTE_SIGN_CHALLENGE':
+        response_json = process_compute_sign_challenge(request_json)
     else:
         response_json = get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
                                                         % (request, request_json['cmd']))
