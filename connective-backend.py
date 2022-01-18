@@ -281,6 +281,10 @@ class BeIdCard:
             return None
 
 
+    def get_card_version(self):
+        return self.__appletversion
+
+
     def select_file(self, file_id):
         '''
         Selects the file at absolute path file_id in preparation of a call to read_selected_file()
@@ -652,6 +656,49 @@ def process_verify_pin(request_json):
     return response
 
 
+def process_compute_signature(request_json):
+    not_found_fields_error = verify_required_fields(request_json, [ 'hash' ])
+    if not_found_fields_error:
+        return not_found_fields_error
+
+    request_reader = request_json['reader'] if 'reader' in request_json else None
+    request_hash = request_json['hash'] if 'hash' in request_json else None
+    if not request_reader or not request_hash:
+        return get_error(99, 'No request received after 10 seconds')
+
+    card_readers = CardReaders()
+    card_reader = card_readers.find_reader(request_reader)
+    beid_card = BeIdCard(card_reader)
+    if not beid_card.card_reader:
+        return get_error(0, 'Card reader %s not found' % request_reader)
+    elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
+        return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
+
+    (is_authenticated, retries_left) = beid_card.authenticate_pin()
+    signature = None
+    if is_authenticated:
+        data_to_sign = request_hash
+        if beid_card.get_card_version() != 18:
+            # <quote> this is not a beid v1.8 card! (or at least it doesn't have an atr of one...)
+            # we'll aplly EMSA-PKCS1-v1_5 encoding to the raw hash, and us that as the data
+            # to sign </quote> TODO
+            pass
+        signature = beid_card.sign(data_to_sign)
+        ignore_result = beid_card.log_off()
+
+    # TODO not sure about this section, not tested with wrong or blocked PIN code
+    response = {}
+    response['pinRemainingAttempts'] = retries_left
+    response['pinValid'] = is_authenticated
+    if signature:
+        response['valid'] = True
+        response['signature'] = signature
+    else:
+        response['valid'] = False
+
+    return response
+
+
 
 request = read_native_message()
 response_json = {}
@@ -680,6 +727,8 @@ try:
         response_json = process_pin_pad_available(request_json)
     elif request_json['cmd'] == 'VERIFY_PIN':
         response_json = process_verify_pin(request_json)
+    elif request_json['cmd'] == 'COMPUTE_SIGNATURE':
+        response_json = process_compute_signature(request_json)
     else:
         response_json = get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
                                                         % (request, request_json['cmd']))
