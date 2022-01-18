@@ -586,24 +586,24 @@ def process_compute_authentication(request_json):
         return get_error(0, 'Card reader %s not found' % request_reader)
     elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
         return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
+
+    (is_authenticated, retries_left) = beid_card.authenticate_pin()
+    signature = None
+    if is_authenticated:
+        signature = beid_card.sign(request_hash)
+        ignore_result = beid_card.log_off()
+
+    # TODO not sure about this section, not tested with wrong or blocked PIN code
+    response = {}
+    response['pinRemainingAttempts'] = retries_left
+    response['pinValid'] = is_authenticated
+    if signature:
+        response['valid'] = True
+        response['signature'] = signature
     else:
-        (is_authenticated, retries_left) = beid_card.authenticate_pin()
-        signature = None
-        if is_authenticated:
-            signature = beid_card.sign(request_hash)
-            ignore_result = beid_card.log_off()
+        response['valid'] = False
 
-        # TODO not sure about this section, not tested with wrong or blocked PIN code
-        response = {}
-        response['pinRemainingAttempts'] = retries_left
-        response['pinValid'] = is_authenticated
-        if signature:
-            response['valid'] = True
-            response['signature'] = signature
-        else:
-            response['valid'] = False
-
-        return response
+    return response
 
 
 def process_pin_pad_available(request_json):
@@ -621,6 +621,33 @@ def process_pin_pad_available(request_json):
 
     response = {}
     response['available'] = beid_card.is_pin_pad_available()
+
+    return response
+
+
+def process_verify_pin(request_json):
+    request_reader = request_json['reader'] if 'reader' in request_json else None
+    if not request_reader:
+        return get_error(99, 'No request received after 10 seconds')
+
+    card_readers = CardReaders()
+    card_reader = card_readers.find_reader(request_reader)
+    beid_card = BeIdCard(card_reader)
+    if not beid_card.card_reader:
+        return get_error(0, 'Card reader %s not found' % request_reader)
+    elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
+        return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
+
+    (is_authenticated, retries_left) = beid_card.authenticate_pin()
+    signature = None
+    if is_authenticated:
+        ignore_result = beid_card.log_off()
+
+    # TODO not sure about this section, not tested with wrong or blocked PIN code
+    response = {}
+    response['pinRemainingAttempts'] = retries_left
+    response['pinValid'] = is_authenticated
+    response['valid'] = is_authenticated
 
     return response
 
@@ -651,6 +678,8 @@ try:
         response_json = process_compute_authentication(request_json)
     elif request_json['cmd'] == 'PIN_PAD_AVAILABLE':
         response_json = process_pin_pad_available(request_json)
+    elif request_json['cmd'] == 'VERIFY_PIN':
+        response_json = process_verify_pin(request_json)
     else:
         response_json = get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
                                                         % (request, request_json['cmd']))
