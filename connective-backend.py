@@ -352,6 +352,23 @@ class BeIdCard:
         self.__ioctls_detected = True
 
 
+    def is_pin_pad_available(self):
+        '''
+        This function returns True if a pinpad is available on the card reader. Contrary to the
+        Connective application a card is required to be present here.
+        '''
+        # Is this hardcoded on model number in the Connective application?
+        # VASCO DIGIPASS 850, VASCO DIGIPASS 870, VASCO DIGIPASS 875, VASCO DIGIPASS 920, APG8201
+        self.__get_reader_features()
+
+        if self.__ioctl_verify_direct:
+            return True
+        elif self.__ioctl_verify_start and self.__ioctl_verify_finish:
+            return True
+        else:
+            return False
+
+
     def authenticate_pin(self):
         '''
         This function requests the user to authenticate using their PIN code.
@@ -589,6 +606,25 @@ def process_compute_authentication(request_json):
         return response
 
 
+def process_pin_pad_available(request_json):
+    request_reader = request_json['reader'] if 'reader' in request_json else None
+    if not request_reader:
+        return get_error(99, 'No request received after 10 seconds')
+
+    card_readers = CardReaders()
+    card_reader = card_readers.find_reader(request_reader)
+    beid_card = BeIdCard(card_reader)
+    if not beid_card.card_reader:
+        return get_error(0, 'Card reader %s not found' % request_reader)
+    elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
+        return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
+
+    response = {}
+    response['available'] = beid_card.is_pin_pad_available()
+
+    return response
+
+
 
 request = read_native_message()
 response_json = {}
@@ -613,6 +649,8 @@ try:
         response_json = process_read_file(request_json)
     elif request_json['cmd'] == 'COMPUTE_AUTHENTICATION':
         response_json = process_compute_authentication(request_json)
+    elif request_json['cmd'] == 'PIN_PAD_AVAILABLE':
+        response_json = process_pin_pad_available(request_json)
     else:
         response_json = get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
                                                         % (request, request_json['cmd']))
