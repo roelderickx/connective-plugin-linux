@@ -495,6 +495,15 @@ def get_error(error_code, message):
     return response
 
 
+def verify_required_fields(request_json, fields):
+    not_found_fields = [ field for field in fields if field not in request_json ]
+    if len(not_found_fields) > 0:
+        return get_error(99, 'Message [%s] misses a field named [%s]' \
+                            % (json.dumps(request_json), not_found_fields[0]))
+    else:
+        return None
+
+
 def process_get_info():
     response = {}
     response['version'] = '2.0.2'
@@ -515,6 +524,10 @@ def process_get_readers():
 
 
 def process_read_file(request_json):
+    not_found_fields_error = verify_required_fields(request_json, [ 'fileId' ])
+    if not_found_fields_error:
+        return not_found_fields_error
+
     request_reader = request_json['reader'] if 'reader' in request_json else None
     request_file_id = request_json['fileId'] if 'fileId' in request_json else None
     if not request_reader or not request_file_id:
@@ -540,6 +553,10 @@ def process_read_file(request_json):
 
 
 def process_compute_authentication(request_json):
+    not_found_fields_error = verify_required_fields(request_json, [ 'hash' ])
+    if not_found_fields_error:
+        return not_found_fields_error
+
     request_reader = request_json['reader'] if 'reader' in request_json else None
     request_hash = request_json['hash'] if 'hash' in request_json else None
     if not request_reader or not request_hash:
