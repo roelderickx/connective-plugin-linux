@@ -9,6 +9,11 @@
                 {
                     document.getElementById('responsereceived').innerHTML = 
                             'Response received: <code>' + JSON.stringify(event.data) + '</code>';
+
+                    debugger;
+                    if (JSON.parse(document.getElementById('request').value)['cmd'] === 'GET_READERS') {
+                        document.getElementById('msgreader').value = event.data['readerList'][0]['name'];
+                    }
                 }
             }, false);
 
@@ -18,25 +23,106 @@
                             'Request sent: <code>' + request + '</code>';
             document.getElementById('responsereceived').innerHTML = '';
         }
+
+        function generate_get_info() {
+            message = {
+                cmd: 'GET_INFO',
+                isRequest: true }
+            document.getElementById('request').innerHTML = JSON.stringify(message)
+        }
+
+        function generate_get_readers() {
+            message = {
+                cmd: 'GET_READERS',
+                activationToken: document.getElementById('msgtoken').value,
+                isRequest: true }
+            document.getElementById('request').innerHTML = JSON.stringify(message)
+        }
+
+        function generate_read_file() {
+            message = {
+                cmd: 'READ_FILE',
+                reader: document.getElementById('msgreader').value,
+                activationToken: document.getElementById('msgtoken').value,
+                fileId: '3F00DF005039',
+                isRequest: true }
+            document.getElementById('request').innerHTML = JSON.stringify(message)
+        }
+
+        function generate_compute_authentication() {
+            message = {
+                cmd: 'COMPUTE_AUTHENTICATION',
+                reader: document.getElementById('msgreader').value,
+                activationToken: document.getElementById('msgtoken').value,
+                hash: '6ABAF13A932D96E8BBFB91ABE2185487FF2E43FF76911E5396DE9FB1579ECC51',
+                isRequest: true }
+            document.getElementById('request').innerHTML = JSON.stringify(message)
+        }
+
+        function generate_pin_pad_available() {
+            message = {
+                cmd: 'PIN_PAD_AVAILABLE',
+                reader: document.getElementById('msgreader').value,
+                activationToken: document.getElementById('msgtoken').value,
+                isRequest: true }
+            document.getElementById('request').innerHTML = JSON.stringify(message)
+        }
+
+        function generate_verify_pin() {
+            message = {
+                cmd: 'VERIFY_PIN',
+                reader: document.getElementById('msgreader').value,
+                activationToken: document.getElementById('msgtoken').value,
+                isRequest: true }
+            document.getElementById('request').innerHTML = JSON.stringify(message)
+        }
+
+        function generate_compute_signature() {
+            message = {
+                cmd: 'COMPUTE_SIGNATURE',
+                reader: document.getElementById('msgreader').value,
+                activationToken: document.getElementById('msgtoken').value,
+                hash: '6ABAF13A932D96E8BBFB91ABE2185487FF2E43FF76911E5396DE9FB1579ECC51',
+                isRequest: true }
+            document.getElementById('request').innerHTML = JSON.stringify(message)
+        }
     </script>
 </head>
 <body>
     <h1>Connective-plugin-linux protocol tester</h1>
-    <ul>
-    <li>GET_INFO: <code>{"cmd":"GET_INFO","isRequest":true}</code>
-    <li>GET_READERS: <code>{"cmd":"GET_READERS","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
-    <li>READ_FILE: <code>{"cmd":"READ_FILE","reader":"VASCO DIGIPASS 870 [CCID] 00 00","fileId":"3F00DF014031","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
-    <li>READ_FILE: <code>{"cmd":"READ_FILE","reader":"VASCO DIGIPASS 870 [CCID] 00 00","fileId":"3F00DF005038","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
-    <li>READ_FILE: <code>{"cmd":"READ_FILE","reader":"VASCO DIGIPASS 870 [CCID] 00 00","fileId":"3F00DF005039","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
-    <li>COMPUTE_AUTHENTICATION: <code>{"cmd":"COMPUTE_AUTHENTICATION","reader":"VASCO DIGIPASS 870 [CCID] 00 00","hash":"31CD354EACB4F4B43AC05FBC75D6E178E53CDB09FEE0B8A063932BDEECC56AC4","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
-    <li>PIN_PAD_AVAILABLE: <code>{"cmd":"PIN_PAD_AVAILABLE","reader":"VASCO DIGIPASS 870 [CCID] 00 00","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
-    <li>VERIFY_PIN: <code>{"cmd":"VERIFY_PIN","reader":"VASCO DIGIPASS 870 [CCID] 00 00","activationToken":"Z9/qe5+6bzQMwLPdQ4XAcTRdWLaAS0kNFw16ybUw1vW/r4k9l+xQT6CokTeX2Z+lvkn/QYorLTPlZFOjVrOAcOA48Q4nVyRLECigTUIqMw6/UF9wzCrhcRuADNtKXkfNhXKsyIXKsqmGiE0IDqloooIo0+NFwizJkESj+FTUk/rsb5Jm8CIU0yhDsaRJGY5lCpmNcEvhhm6tut/pME+DdezTDZ/1Kjj43Wx/B/4w8lmQsk+E+14/Quksr1RPIu9ikkUDTGyBpkBnN/No1q2+ZHOFb8Cddxzpca5pegk1WZ3WPlUATD+K5/oYn+DW2e3mU9oc4JyzH4c1RPeCmIhXeQ==","isRequest":true}</code>
-    </ul>
-    <br/>
+    <h3>Generate message</h3>
+    <table>
+    <tr>
+        <td>
+            <label for="msgreader">Reader:</label>
+        </td>
+        <td>
+            <input type="text" id="msgreader" name="msgreader" size="50" />
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <label for="msgtoken">Token:</label>
+        </td>
+        <td>
+            <input type="text" id="msgtoken" name="msgtoken" size="50" />
+        </td>
+    </tr>
+    </table>
+    <input type="button" value="GET_INFO" onclick="generate_get_info()" />
+    <input type="button" value="GET_READERS" onclick="generate_get_readers()" />
+    <input type="button" value="READ_FILE" onclick="generate_read_file()" />
+    <input type="button" value="COMPUTE_AUTHENTICATION" onclick="generate_compute_authentication()" />
+    <input type="button" value="PIN_PAD_AVAILABLE" onclick="generate_pin_pad_available()" />
+    <input type="button" value="VERIFY_PIN" onclick="generate_verify_pin()" />
+    <input type="button" value="COMPUTE_SIGNATURE" onclick="generate_compute_signature()" />
+
+    <h3>Message</h3>
     <textarea id="request" cols="100" rows="7"></textarea>
     <br/>
     <button onclick="connectiveRequest(document.getElementById('request').value)">Send request</button>
-    <p/><hr/><p/>
+
+    <h3>Communication</h3>
     <div id="requestsent"></div>
     <div id="responsereceived"></div>
 </body>
