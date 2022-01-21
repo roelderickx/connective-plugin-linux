@@ -35,6 +35,9 @@ CCID_CHANGE_DIRECT = 0x07
 
 MAX_PIN_LENGTH = 12
 
+AUTHENTICATION_KEY = 0x82
+NON_REPUDIATION_KEY = 0x83
+
 class NumpadWindow(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
@@ -373,6 +376,16 @@ class BeIdCard:
             return False
 
 
+    def select_coding_algorithm(self, key_selector):
+        # select RSASSA-PKCS1_v15 without predefined padding algorithm (0x01)
+        data, sw1, sw2 = self.__send_apdu([ 0x00, 0x22, 0x41, 0xB6, 0x05,
+                                            0x04, 0x80, 0x08, 0x84, key_selector ])
+        if sw1 == 0x90 and sw2 == 0x00:
+            return True
+        else:
+            return False
+
+
     def authenticate_pin(self):
         '''
         This function requests the user to authenticate using their PIN code.
@@ -456,18 +469,12 @@ class BeIdCard:
         Signs the given data using the connected card. A call to authenticate_pin() is required
         first to fulfill the access conditions.
         '''
-        # select RSASSA-PKCS1_v15 SHA256 algorithm (0x08) and authentication once (0x82)
-        data, sw1, sw2 = self.__send_apdu([ 0x00, 0x22, 0x41, 0xB6, 0x05,
-                                            0x04, 0x80, 0x08, 0x84, 0x82 ])
+        bin_data_to_sign = smartcard.util.toBytes(data_to_sign)
+        request_data = [ 0x00, 0x2A, 0x9E, 0x9A, len(bin_data_to_sign) ] + \
+                         bin_data_to_sign #+ [ 0x00 ]
+        data, sw1, sw2 = self.__send_apdu(request_data)
         if sw1 == 0x90 and sw2 == 0x00:
-            bin_data_to_sign = smartcard.util.toBytes(data_to_sign)
-            request_data = [ 0x00, 0x2A, 0x9E, 0x9A, len(bin_data_to_sign) ] + \
-                             bin_data_to_sign + [ 0x00 ]
-            data, sw1, sw2 = self.__send_apdu(request_data)
-            if sw1 == 0x90 and sw2 == 0x00:
-                return smartcard.util.toHexString(data).replace(' ', '')
-            else:
-                return None
+            return smartcard.util.toHexString(data).replace(' ', '')
         else:
             return None
 
@@ -573,6 +580,41 @@ def process_read_file(request_json):
             return get_error(5, 'Error reading file (Comm 0x6a87) (0xa4080c)')
 
 
+def compute_digital_signature(request_reader, request_hash, key_selector):
+    card_readers = CardReaders()
+    card_reader = card_readers.find_reader(request_reader)
+    beid_card = BeIdCard(card_reader)
+    if not beid_card.card_reader:
+        return get_error(0, 'Card reader %s not found' % request_reader)
+    elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
+        return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
+
+    is_authenticated = False
+    retries_left = -1
+    if beid_card.select_coding_algorithm(key_selector):
+        (is_authenticated, retries_left) = beid_card.authenticate_pin()
+        signature = None
+        if is_authenticated:
+            if request_hash and key_selector:
+                signature = beid_card.sign(request_hash)
+            ignore_result = beid_card.log_off()
+
+    # TODO not sure about this section, not tested with wrong or blocked PIN code
+    response = {}
+    response['pinRemainingAttempts'] = retries_left
+    response['pinValid'] = is_authenticated
+    if request_hash and key_selector:
+        if signature:
+            response['valid'] = True
+            response['signature'] = signature
+        else:
+            response['valid'] = False
+    else:
+        response['valid'] = True
+
+    return response
+
+
 def process_compute_authentication(request_json):
     not_found_fields_error = verify_required_fields(request_json, [ 'hash' ])
     if not_found_fields_error:
@@ -583,31 +625,7 @@ def process_compute_authentication(request_json):
     if not request_reader or not request_hash:
         return get_error(99, 'No request received after 10 seconds')
 
-    card_readers = CardReaders()
-    card_reader = card_readers.find_reader(request_reader)
-    beid_card = BeIdCard(card_reader)
-    if not beid_card.card_reader:
-        return get_error(0, 'Card reader %s not found' % request_reader)
-    elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
-        return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
-
-    (is_authenticated, retries_left) = beid_card.authenticate_pin()
-    signature = None
-    if is_authenticated:
-        signature = beid_card.sign(request_hash)
-        ignore_result = beid_card.log_off()
-
-    # TODO not sure about this section, not tested with wrong or blocked PIN code
-    response = {}
-    response['pinRemainingAttempts'] = retries_left
-    response['pinValid'] = is_authenticated
-    if signature:
-        response['valid'] = True
-        response['signature'] = signature
-    else:
-        response['valid'] = False
-
-    return response
+    return compute_digital_signature(request_reader, request_hash, AUTHENTICATION_KEY)
 
 
 def process_pin_pad_available(request_json):
@@ -642,18 +660,7 @@ def process_verify_pin(request_json):
     elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
         return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
 
-    (is_authenticated, retries_left) = beid_card.authenticate_pin()
-    signature = None
-    if is_authenticated:
-        ignore_result = beid_card.log_off()
-
-    # TODO not sure about this section, not tested with wrong or blocked PIN code
-    response = {}
-    response['pinRemainingAttempts'] = retries_left
-    response['pinValid'] = is_authenticated
-    response['valid'] = is_authenticated
-
-    return response
+    return compute_digital_signature(request_reader, None, None)
 
 
 def process_compute_signature(request_json):
@@ -674,29 +681,7 @@ def process_compute_signature(request_json):
     elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
         return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
 
-    (is_authenticated, retries_left) = beid_card.authenticate_pin()
-    signature = None
-    if is_authenticated:
-        data_to_sign = request_hash
-        if beid_card.get_card_version() != 18:
-            # <quote> this is not a beid v1.8 card! (or at least it doesn't have an atr of one...)
-            # we'll aplly EMSA-PKCS1-v1_5 encoding to the raw hash, and us that as the data
-            # to sign </quote> TODO
-            pass
-        signature = beid_card.sign(data_to_sign)
-        ignore_result = beid_card.log_off()
-
-    # TODO not sure about this section, not tested with wrong or blocked PIN code
-    response = {}
-    response['pinRemainingAttempts'] = retries_left
-    response['pinValid'] = is_authenticated
-    if signature:
-        response['valid'] = True
-        response['signature'] = signature
-    else:
-        response['valid'] = False
-
-    return response
+    return compute_digital_signature(request_reader, request_hash, NON_REPUDIATION_KEY)
 
 
 def process_compute_sign_challenge(request_json):
