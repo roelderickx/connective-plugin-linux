@@ -194,7 +194,8 @@ class BeIdCard:
         self.card_data = self.__get_card_data()
 
         if self.card_data:
-            log('Card serial nr: %s' % smartcard.util.toHexString(self.__serialnr).replace(' ', ''))
+            # disabled to maximally protect privacy
+            #log('Card serial nr: %s' % smartcard.util.toHexString(self.__serialnr).replace(' ', ''))
             log('Card applet version: %x' % self.__appletversion)
             log('Card 0x6C delay required: %d ms' % self.__6c_delay)
 
@@ -376,8 +377,39 @@ class BeIdCard:
             return False
 
 
+    def EMSA_PKCS1_V1_5_ENCODE(self, sha256hash):
+        '''
+        Implement the EMSA-PKCS1-V1_5-ENCODE function, as defined in PKCS#1 v2.1 (RFC3447, 9.2).
+        EMSA-PKCS1-V1_5-ENCODE actually accepts the message M as input, and hash it internally.
+        Here, we expect that the message has already been hashed instead.
+
+        ref: https://github.com/pycrypto/pycrypto/blob/master/lib/Crypto/Signature/PKCS1_v1_5.py#L173
+        '''
+        # requires pycryptodome
+        # from Crypto.Util.asn1 import DerSequence, DerNull, DerOctetString, DerObjectId
+        # from Crypto.Util.py3compat import bchr
+        '''
+        # AlgorithmIdentifier OID for use with PKCS#1 v1.5.
+        digestAlgo  = DerSequence([
+                        DerObjectId('2.16.840.1.101.3.4.2.1').encode(),
+                        DerNull().encode()
+                        ])
+
+        digest = DerOctetString(sha256hash)
+        digestInfo  = DerSequence([
+                        digestAlgo.encode(),
+                        digest.encode()
+                        ]).encode()
+
+        return digestInfo
+        '''
+        pass
+
+
     def select_coding_algorithm(self, key_selector):
-        # select RSASSA-PKCS1_v15 without predefined padding algorithm (0x01)
+        # select RSASSA-PKCS1_v15 SHA256 algorithm (0x08)
+        # RSASSA-PKCS1_v15 without predefined padding algorithm (0x01) can also be selected but then
+        # the data to sign must be EMSA-PKCS1-v1_5 encoded first. See EMSA_PKCS1_V1_5_ENCODE above.
         data, sw1, sw2 = self.__send_apdu([ 0x00, 0x22, 0x41, 0xB6, 0x05,
                                             0x04, 0x80, 0x08, 0x84, key_selector ])
         if sw1 == 0x90 and sw2 == 0x00:
@@ -417,7 +449,7 @@ class BeIdCard:
         # APDU to send to the card (to be completed by the reader)
         control_request += [ 0x00, 0x20, 0x00, 0x01, 0x08, 0x20, 0xFF,
                              0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF ]
-        
+
         sw1 = 0x00
         sw2 = 0x00
         if self.__ioctl_verify_direct:
