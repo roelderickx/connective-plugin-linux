@@ -27,6 +27,7 @@ message['activationToken'] = current_token
 message['isRequest'] = True
 send_native_message(json.dumps(message), 'get_readers.txt')
 
+# authenticate
 message = {}
 message['cmd'] = 'READ_FILE'
 message['reader'] = reader
@@ -43,6 +44,7 @@ message['hash'] = '6ABAF13A932D96E8BBFB91ABE2185487FF2E43FF76911E5396DE9FB1579EC
 message['isRequest'] = True
 send_native_message(json.dumps(message), 'compute_authentication.txt')
 
+# sign document
 message = {}
 message['cmd'] = 'PIN_PAD_AVAILABLE'
 message['reader'] = reader
@@ -64,15 +66,39 @@ message['activationToken'] = current_token
 message['hash'] = '6ABAF13A932D96E8BBFB91ABE2185487FF2E43FF76911E5396DE9FB1579ECC51'
 message['isRequest'] = True
 send_native_message(json.dumps(message), 'compute_signature.txt')
-'''
+
+# maestro
+message = {}
+message['cmd'] = 'SELECT_MAESTRO'
+message['reader'] = reader
+message['activationToken'] = current_token
+message['isRequest'] = True
+send_native_message(json.dumps(message), 'select_maestro.txt')
+
+message = {}
+message['cmd'] = 'GET_PROCESSING_OPTIONS'
+message['reader'] = reader
+message['activationToken'] = current_token
+message['data'] = '8300'
+message['isRequest'] = True
+send_native_message(json.dumps(message), 'get_processing_options.txt')
+
+message = {}
+message['cmd'] = 'READ_RECORD'
+message['reader'] = reader
+message['activationToken'] = current_token
+message['record'] = '01'
+message['sfi'] = '02'
+message['isRequest'] = True
+send_native_message(json.dumps(message), 'read_record.txt')
+
 message = {}
 message['cmd'] = 'COMPUTE_SIGN_CHALLENGE'
 message['reader'] = reader
 message['activationToken'] = current_token
 message['language'] = 'nl'
-message['transaction'] = 'xxx'
+message['transaction'] = '1'
 message['hash'] = '6ABAF13A932D96E8BBFB91ABE2185487FF2E43FF76911E5396DE9FB1579ECC51'
 message['isRequest'] = True
 send_native_message(json.dumps(message), 'compute_sign_challenge.txt')
-'''
 

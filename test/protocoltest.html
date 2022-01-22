@@ -10,7 +10,6 @@
                     document.getElementById('responsereceived').innerHTML = 
                             'Response received: <code>' + JSON.stringify(event.data) + '</code>';
 
-                    debugger;
                     if (JSON.parse(document.getElementById('request').value)['cmd'] === 'GET_READERS') {
                         document.getElementById('msgreader').value = event.data['readerList'][0]['name'];
                     }
@@ -86,6 +85,36 @@
                 isRequest: true }
             document.getElementById('request').innerHTML = JSON.stringify(message)
         }
+
+        function generate_select_maestro() {
+            message = {
+                cmd: 'SELECT_MAESTRO',
+                reader: document.getElementById('msgreader').value,
+                activationToken: document.getElementById('msgtoken').value,
+                isRequest: true }
+            document.getElementById('request').innerHTML = JSON.stringify(message)
+        }
+
+        function generate_get_processing_options() {
+            message = {
+                cmd: 'GET_PROCESSING_OPTIONS',
+                reader: document.getElementById('msgreader').value,
+                activationToken: document.getElementById('msgtoken').value,
+                data: '8300',
+                isRequest: true }
+            document.getElementById('request').innerHTML = JSON.stringify(message)
+        }
+
+        function generate_read_record() {
+            message = {
+                cmd: 'READ_RECORD',
+                reader: document.getElementById('msgreader').value,
+                activationToken: document.getElementById('msgtoken').value,
+                record: '01',
+                sfi: '02',
+                isRequest: true }
+            document.getElementById('request').innerHTML = JSON.stringify(message)
+        }
     </script>
 </head>
 <body>
@@ -109,13 +138,23 @@
         </td>
     </tr>
     </table>
+    Base functions (send GET_READERS to automatically fill the reader above):<br/>
     <input type="button" value="GET_INFO" onclick="generate_get_info()" />
     <input type="button" value="GET_READERS" onclick="generate_get_readers()" />
+    <br/>
+    Authentication:<br/>
     <input type="button" value="READ_FILE" onclick="generate_read_file()" />
     <input type="button" value="COMPUTE_AUTHENTICATION" onclick="generate_compute_authentication()" />
+    <br/>
+    Sign documents:<br/>
     <input type="button" value="PIN_PAD_AVAILABLE" onclick="generate_pin_pad_available()" />
     <input type="button" value="VERIFY_PIN" onclick="generate_verify_pin()" />
     <input type="button" value="COMPUTE_SIGNATURE" onclick="generate_compute_signature()" />
+    <br/>
+    Maestro:<br/>
+    <input type="button" value="SELECT_MAESTRO" onclick="generate_select_maestro()" />
+    <input type="button" value="GET_PROCESSING_OPTIONS" onclick="generate_get_processing_options()" />
+    <input type="button" value="READ_RECORD" onclick="generate_read_record()" />
 
     <h3>Message</h3>
     <textarea id="request" cols="100" rows="7"></textarea>
