@@ -53,25 +53,23 @@ class NumpadWindow(tk.Frame):
         self.pincode = ''
 
         button_large_font = font.Font(size=24, weight='bold')
-        buttons = []
         for i in range(10):
-          if i == 0:
-            button_r = 5
-            button_c = 2
-          else:
-            button_r = (i - 1) // 3 + 2
-            button_c = (i - 1) % 3 + 1
-          b = tk.Button(self, text=i, font=button_large_font, \
-                        width=3, height=2, \
-                        command=lambda i=i: self.click_button(i))
-          b.grid(row=button_r, column=button_c)
-          buttons.append(b)
+            if i == 0:
+                button_r = 5
+                button_c = 2
+            else:
+                button_r = (i - 1) // 3 + 2
+                button_c = (i - 1) % 3 + 1
+            b = tk.Button(self, text=i, font=button_large_font, \
+                          width=3, height=2, \
+                          command=lambda i=i: self.click_button(i))
+            b.grid(row=button_r, column=button_c)
 
         button_c = tk.Button(self, text="C", font=button_large_font, width=3, height=2, \
                              command=self.click_button_c)
         button_c.grid(row=5, column=1)
         button_ok = tk.Button(self, text="Ok", font=button_large_font, width=3, height=2, \
-                             command=self.click_button_ok)
+                              command=self.click_button_ok)
         button_ok.grid(row=5, column=3)
 
         self.master.bind("<Key>", self.key_pressed)
@@ -91,8 +89,8 @@ class NumpadWindow(tk.Frame):
             self.master.destroy()
 
 
-    def click_button(self,c):
-        self.__add_code(('%d' % c))
+    def click_button(self, c):
+        self.__add_code('%d' % c)
 
 
     def click_button_c(self):
@@ -127,62 +125,82 @@ class NumpadWindow(tk.Frame):
 
 
 
-class CardReaders:
+class CardReaderFactory:
     def __init__(self):
         self.card_readers = smartcard.System.readers()
 
 
+    def __detect_card(self, card_reader):
+        # do we have a be-eid card?
+        beid_card = BeIdCard(card_reader)
+        if beid_card.is_card_present():
+            return beid_card
+        # do we have a maestro card?
+        maestro_card = MaestroCard(card_reader)
+        if maestro_card.is_card_present():
+            return maestro_card
+        # otherwise we have either an unsupported card or no card at all
+        return BaseCard(card_reader)
+
+
+    def get_reader_list(self):
+        reader_list = []
+        for index, card_reader in enumerate(self.card_readers):
+            card = self.__detect_card(card_reader)
+
+            reader = {}
+            reader['index'] = index
+            reader['library'] = '__cardcomm__' # modify to pyscard?
+            reader['name'] = card_reader.name
+            if card.is_card_present():
+                reader['atr'] = card.get_atr()
+            reader['cardPresent'] = card.is_card_present()
+            reader['cardType'] = card.get_connective_card_type()
+
+            reader_list.append(reader)
+
+        return reader_list
+
+
     def find_reader(self, reader_name):
         card_reader_list = [ r for r in self.card_readers if r.name == reader_name]
-        return card_reader_list[0] if len(card_reader_list) > 0 else None
+        if len(card_reader_list) > 0:
+            card_reader = card_reader_list[0]
+            return self.__detect_card(card_reader)
+        else:
+            return None
 
 
-    def amount_readers(self):
-        return len(self.card_readers)
+
+class BaseCard:
+    def __init__(self, card_reader):
+        self.card_reader = card_reader
+        self._connection = None
+        self._atr = None
 
 
-    def __card_is_be_id(self, atr):
-        # Belgium Electronic ID card or Belgian Eid virtual test card
-        # ref: http://ludovic.rousseau.free.fr/softwares/pcsc-tools/smartcard_list.txt
-        return atr in ['3B9894400AA503010101AD1310',
-                       '3B9813400AA503010101AD1311',
-                       '3B989540FFD000480101AD1321']
+    def __del__(self):
+        if self._connection:
+            self._connection.disconnect()
 
 
-    def get_reader_as_json(self, index):
-        card_present = False
-        card_type = 0
-        atr = None
+    def get_atr(self):
+        return self._atr
 
-        connection = self.card_readers[index].createConnection()
-        try:
-            connection.connect()
-            card_present = True
-            atr = smartcard.util.toHexString(connection.getATR()).replace(' ', '')
-            if self.__card_is_be_id(atr):
-                card_type = 1
-            connection.disconnect()
-        except smartcard.Exceptions.NoCardException:
-            pass
 
-        response = {}
-        response['index'] = index
-        response['library'] = '__cardcomm__' # modify to pyscard?
-        response['name'] = self.card_readers[index].name
-        if card_present:
-            response['atr'] = atr
-        response['cardPresent'] = card_present
-        response['cardType'] = card_type
+    def is_card_present(self):
+        return (self._connection is not None)
 
-        return response
+
+    def get_connective_card_type(self):
+        return 0
 
 
 
 # ref https://github.com/Fedict/eid-mw/blob/master/doc/sdk/documentation/Applet%201.7%20eID%20Cards/Public_Belpic_Applet_v1%207_Ref_Manual%20-%20A01.pdf
-class BeIdCard:
+class BeIdCard(BaseCard):
     def __init__(self, card_reader):
-        self.card_reader = card_reader
-        self.connection = None
+        super().__init__(card_reader)
         self.__connect()
         self.applet_selected = self.__select_applet()
         self.get_instance = self.__get_instance()
@@ -209,36 +227,51 @@ class BeIdCard:
         self.__ioctl_change_direct = None
 
 
-    def __del__(self):
-        if self.connection:
-            self.connection.disconnect()
+    def is_card_present(self):
+        return (self._connection and self.applet_selected and self.get_instance)
+
+
+    def get_connective_card_type(self):
+        return 1
+
+
+    def __card_is_be_id(self):
+        # Belgium Electronic ID card or Belgian Eid virtual test card
+        # ref: http://ludovic.rousseau.free.fr/softwares/pcsc-tools/smartcard_list.txt
+        return self._atr in ['3B9894400AA503010101AD1310',
+                             '3B9813400AA503010101AD1311',
+                             '3B989540FFD000480101AD1321']
 
 
     def __connect(self):
         if self.card_reader:
             try:
-                self.connection = self.card_reader.createConnection()
-                self.connection.connect()
+                self._connection = self.card_reader.createConnection()
+                self._connection.connect()
+                self._atr = smartcard.util.toHexString(self._connection.getATR()).replace(' ', '')
+                if not self.__card_is_be_id():
+                    self._connection.disconnect()
+                    self._connection = None
             except smartcard.Exceptions.NoCardException:
-                self.connection = None
+                self._connection = None
 
 
     def __send_apdu(self, apdu):
-        data, sw1, sw2 = self.connection.transmit(apdu)
+        data, sw1, sw2 = self._connection.transmit(apdu)
         if len(data) == 0:
             if sw1 == 0x61:
                 while sw1 == 0x61:
-                    extra_data, sw1, sw2 = self.connection.transmit([ 0x00, 0xC0, 0x00, 0x00, sw2 ])
+                    extra_data, sw1, sw2 = self._connection.transmit([ 0x00, 0xC0, 0x00, 0x00, sw2 ])
                     data.extend(extra_data)
             if sw1 == 0x6C:
                 time.sleep(self.__6c_delay / 1000)
-                data, sw1, sw2 = self.connection.transmit(apdu[0:4] + [ sw2 ] + apdu[5:])
+                data, sw1, sw2 = self._connection.transmit(apdu[0:4] + [ sw2 ] + apdu[5:])
         return data, sw1, sw2
 
 
     def __select_applet(self):
-        if self.connection:
-            data, sw1, sw2 = self.connection.transmit(APPLET_AID)
+        if self._connection:
+            data, sw1, sw2 = self._connection.transmit(APPLET_AID)
             if sw1 in [ 0x61, 0x90 ] and sw2 == 0x00:
                 return True
             else:
@@ -248,7 +281,7 @@ class BeIdCard:
 
 
     def __get_instance(self):
-        if self.connection:
+        if self._connection:
             data, sw1, sw2 = self.__send_apdu(BELPIC_AID)
             if sw1 == 0x6A and sw2 in [ 0x82, 0x86 ]:
                 # Perhaps the applet is no longer selected
@@ -264,7 +297,7 @@ class BeIdCard:
 
 
     def __get_card_data(self):
-        if self.connection:
+        if self._connection:
             # Get Card Data (compatible with all applets)
             data, sw1, sw2 = self.__send_apdu([ 0x80, 0xE4, 0x00, 0x00, 0x1C ])
             if sw1 == 0x90 and sw2 == 0x00 and len(data) > 23:
@@ -339,7 +372,7 @@ class BeIdCard:
         if self.__ioctls_detected:
             return
 
-        features = self.connection.control(smartcard.scard.SCARD_CTL_CODE(3400), [])
+        features = self._connection.control(smartcard.scard.SCARD_CTL_CODE(3400), [])
         i = 0
         while i < len(features):
             feature = features[i:i+6]
@@ -461,7 +494,7 @@ class BeIdCard:
                                                 'eID PIN code on the secure pinpad reader [%s]' \
                                                 % self.card_reader.name)
 
-            data = self.connection.control(self.__ioctl_verify_direct, control_request)
+            data = self._connection.control(self.__ioctl_verify_direct, control_request)
             sw1 = data[0]
             sw2 = data[1]
         elif self.__ioctl_verify_start and self.__ioctl_verify_finish:
@@ -470,8 +503,8 @@ class BeIdCard:
                                                 'eID PIN code on the secure pinpad reader [%s]' \
                                                 % self.card_reader.name)
 
-            data = self.connection.control(self.__ioctl_verify_start, control_request)
-            data = self.connection.control(self.__ioctl_verify_finish, [ ])
+            data = self._connection.control(self.__ioctl_verify_start, control_request)
+            data = self._connection.control(self.__ioctl_verify_finish, [ ])
             sw1 = data[0]
             sw2 = data[1]
         else:
@@ -520,6 +553,20 @@ class BeIdCard:
             return True
         else:
             return False
+
+
+
+class MaestroCard(BaseCard):
+    def __init__(self, card_reader):
+        super().__init__(card_reader)
+
+
+    def is_card_present(self):
+        return (self._connection is not None)
+
+
+    def get_connective_card_type(self):
+        return 2
 
 
 
@@ -628,14 +675,13 @@ def process_get_info():
 
 
 def process_get_readers():
-    card_readers = CardReaders()
-    if card_readers.amount_readers() == 0:
+    card_reader_factory = CardReaderFactory()
+    reader_list = card_reader_factory.get_reader_list()
+    if len(reader_list) == 0:
         return get_error(2, 'Error getting readers (Comm 0x80100001) (0)')
     else:
         response = {}
-        response['readerList'] = []
-        for index in range(card_readers.amount_readers()):
-            response['readerList'].append(card_readers.get_reader_as_json(index))
+        response['readerList'] = reader_list
         return response
 
 
@@ -647,17 +693,17 @@ def process_read_file(request_json):
     request_reader = request_json['reader']
     request_file_id = request_json['fileId']
 
-    card_readers = CardReaders()
-    card_reader = card_readers.find_reader(request_reader)
-    beid_card = BeIdCard(card_reader)
-    if not beid_card.card_reader:
+    card_reader_factory = CardReaderFactory()
+    card_reader = card_reader_factory.find_reader(request_reader)
+    sys.stderr.write('==> %s <==\n' % type(card_reader))
+    if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
-    elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
+    elif not isinstance(card_reader, BeIdCard) or not card_reader.is_card_present():
         return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
-    elif not beid_card.select_file(request_file_id):
+    elif not card_reader.select_file(request_file_id):
         return get_error(5, 'Error reading file (Comm 0x6a87) (0xa4080c)')
     else:
-        data = beid_card.read_selected_file()
+        data = card_reader.read_selected_file()
         if data:
             response = {}
             response['data'] = smartcard.util.toHexString(data).replace(' ', '')
@@ -667,23 +713,22 @@ def process_read_file(request_json):
 
 
 def compute_signature(request_reader, request_hash, key_selector):
-    card_readers = CardReaders()
-    card_reader = card_readers.find_reader(request_reader)
-    beid_card = BeIdCard(card_reader)
-    if not beid_card.card_reader:
+    card_reader_factory = CardReaderFactory()
+    card_reader = card_reader_factory.find_reader(request_reader)
+    if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
-    elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
+    elif not isinstance(card_reader, BeIdCard) or not card_reader.is_card_present():
         return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
 
     is_authenticated = False
     retries_left = -1
-    if not key_selector or beid_card.select_coding_algorithm(key_selector):
-        (is_authenticated, retries_left) = beid_card.authenticate_pin()
+    if not key_selector or card_reader.select_coding_algorithm(key_selector):
+        (is_authenticated, retries_left) = card_reader.authenticate_pin()
         signature = None
         if is_authenticated:
             if request_hash and key_selector:
-                signature = beid_card.sign(request_hash)
-            ignore_result = beid_card.log_off()
+                signature = card_reader.sign(request_hash)
+            ignore_result = card_reader.log_off()
 
     # TODO not sure about this section, not tested with wrong or blocked PIN code
     response = {}
@@ -716,16 +761,15 @@ def process_pin_pad_available(request_json):
 
     request_reader = request_json['reader']
 
-    card_readers = CardReaders()
-    card_reader = card_readers.find_reader(request_reader)
-    beid_card = BeIdCard(card_reader)
-    if not beid_card.card_reader:
+    card_reader_factory = CardReaderFactory()
+    card_reader = card_reader_factory.find_reader(request_reader)
+    if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
-    elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
+    elif not isinstance(card_reader, BeIdCard) or not card_reader.is_card_present():
         return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
 
     response = {}
-    response['available'] = beid_card.is_pin_pad_available()
+    response['available'] = card_reader.is_pin_pad_available()
 
     return response
 
@@ -780,6 +824,10 @@ def process_get_processing_options(request_json):
 
 
 def process_read_record(request_json):
+    params = Parameters(request_json).contains('reader').contains('record').contains('sfi')
+    if params.error_code:
+        return get_error(params.error_code, params.error)
+
     # TODO implement
 
     return get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
