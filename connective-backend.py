@@ -389,7 +389,7 @@ class BeIdCard:
         # from Crypto.Util.asn1 import DerSequence, DerNull, DerOctetString, DerObjectId
         # from Crypto.Util.py3compat import bchr
         '''
-        # AlgorithmIdentifier OID for use with PKCS#1 v1.5.
+        # SHA256 Identifier OID for use with PKCS#1 v1.5.
         digestAlgo  = DerSequence([
                         DerObjectId('2.16.840.1.101.3.4.2.1').encode(),
                         DerNull().encode()
@@ -523,6 +523,60 @@ class BeIdCard:
 
 
 
+class Parameters:
+    def __init__(self, message):
+        self.message = message
+        self.error_code = None
+        self.error = None
+
+
+    def __verify_field_exists(self, field):
+        if field not in self.message:
+            self.error_code = 99
+            self.error = 'Message [%s] misses a field named [%s]' % (json.dumps(self.message), field)
+
+
+    def __verify_field_is_hex(self, field, maxlen):
+        value = self.message[field]
+        if len(value) > maxlen or any([ c for c in value if (c not in '0123456789ABCDEF') ]):
+            if field == 'fileId':
+                self.error_code = 3
+            else:
+                self.error_code = 7
+            self.error = 'Invalid data [%s]. Should be maximum %d hex characters' % (value, maxlen)
+
+
+    def __verify_field_is_valid_hash(self, field):
+        value = self.message[field]
+        validlen = [ 40, 64, 128 ]
+        if len(value) not in validlen or any([ c for c in value if (c not in '0123456789ABCDEF') ]):
+            self.error_code = 7
+            self.error = 'Invalid hash [%s]; should be either 20, 32 or 64 bytes' % value
+
+
+    def contains(self, field):
+        if not self.error_code:
+            self.__verify_field_exists(field)
+        return self
+
+
+    def contains_hex(self, field, maxlen):
+        if not self.error_code:
+            self.__verify_field_exists(field)
+        if not self.error_code:
+            self.__verify_field_is_hex(field, maxlen)
+        return self
+
+
+    def contains_hash(self, field):
+        if not self.error_code:
+            self.__verify_field_exists(field)
+        if not self.error_code:
+            self.__verify_field_is_valid_hash(field)
+        return self
+
+
+
 def log(message):
     if DEBUG:
         sys.stderr.write(message + '\n')
@@ -558,15 +612,6 @@ def get_error(error_code, message):
     return response
 
 
-def verify_required_fields(request_json, fields):
-    not_found_fields = [ field for field in fields if field not in request_json ]
-    if len(not_found_fields) > 0:
-        return get_error(99, 'Message [%s] misses a field named [%s]' \
-                            % (json.dumps(request_json), not_found_fields[0]))
-    else:
-        return None
-
-
 def verify_activation_token(token):
     '''
     Verify if the given token is valid.
@@ -595,14 +640,12 @@ def process_get_readers():
 
 
 def process_read_file(request_json):
-    not_found_fields_error = verify_required_fields(request_json, [ 'fileId' ])
-    if not_found_fields_error:
-        return not_found_fields_error
+    params = Parameters(request_json).contains('reader').contains_hex('fileId', 64)
+    if params.error_code:
+        return get_error(params.error_code, params.error)
 
-    request_reader = request_json['reader'] if 'reader' in request_json else None
-    request_file_id = request_json['fileId'] if 'fileId' in request_json else None
-    if not request_reader or not request_file_id:
-        return get_error(99, 'No request received after 10 seconds')
+    request_reader = request_json['reader']
+    request_file_id = request_json['fileId']
 
     card_readers = CardReaders()
     card_reader = card_readers.find_reader(request_reader)
@@ -623,7 +666,7 @@ def process_read_file(request_json):
             return get_error(5, 'Error reading file (Comm 0x6a87) (0xa4080c)')
 
 
-def compute_digital_signature(request_reader, request_hash, key_selector):
+def compute_signature(request_reader, request_hash, key_selector):
     card_readers = CardReaders()
     card_reader = card_readers.find_reader(request_reader)
     beid_card = BeIdCard(card_reader)
@@ -659,22 +702,19 @@ def compute_digital_signature(request_reader, request_hash, key_selector):
 
 
 def process_compute_authentication(request_json):
-    not_found_fields_error = verify_required_fields(request_json, [ 'hash' ])
-    if not_found_fields_error:
-        return not_found_fields_error
+    params = Parameters(request_json).contains('reader').contains_hash('hash')
+    if params.error_code:
+        return get_error(params.error_code, params.error)
 
-    request_reader = request_json['reader'] if 'reader' in request_json else None
-    request_hash = request_json['hash'] if 'hash' in request_json else None
-    if not request_reader or not request_hash:
-        return get_error(99, 'No request received after 10 seconds')
-
-    return compute_digital_signature(request_reader, request_hash, AUTHENTICATION_KEY)
+    return compute_signature(request_json['reader'], request_json['hash'], AUTHENTICATION_KEY)
 
 
 def process_pin_pad_available(request_json):
-    request_reader = request_json['reader'] if 'reader' in request_json else None
-    if not request_reader:
-        return get_error(99, 'No request received after 10 seconds')
+    params = Parameters(request_json).contains('reader')
+    if params.error_code:
+        return get_error(params.error_code, params.error)
+
+    request_reader = request_json['reader']
 
     card_readers = CardReaders()
     card_reader = card_readers.find_reader(request_reader)
@@ -691,31 +731,29 @@ def process_pin_pad_available(request_json):
 
 
 def process_verify_pin(request_json):
-    request_reader = request_json['reader'] if 'reader' in request_json else None
-    if not request_reader:
-        return get_error(99, 'No request received after 10 seconds')
+    params = Parameters(request_json).contains('reader')
+    if params.error_code:
+        return get_error(params.error_code, params.error)
 
-    return compute_digital_signature(request_reader, None, None)
+    return compute_signature(request_json['reader'], None, None)
 
 
 def process_compute_signature(request_json):
-    not_found_fields_error = verify_required_fields(request_json, [ 'hash' ])
-    if not_found_fields_error:
-        return not_found_fields_error
+    params = Parameters(request_json).contains('reader').contains_hash('hash')
+    if params.error_code:
+        return get_error(params.error_code, params.error)
 
-    request_reader = request_json['reader'] if 'reader' in request_json else None
-    request_hash = request_json['hash'] if 'hash' in request_json else None
-    if not request_reader or not request_hash:
-        return get_error(99, 'No request received after 10 seconds')
-
-    return compute_digital_signature(request_reader, request_hash, NON_REPUDIATION_KEY)
+    return compute_signature(request_json['reader'], request_json['hash'], NON_REPUDIATION_KEY)
 
 
 def process_compute_sign_challenge(request_json):
-    not_found_fields_error = \
-            verify_required_fields(request_json, [ 'language', 'transaction', 'hash' ])
-    if not_found_fields_error:
-        return not_found_fields_error
+    params = Parameters(request_json) \
+        .contains('reader') \
+        .contains('language') \
+        .contains('transaction') \
+        .contains_hex('hash', 100)
+    if params.error_code:
+        return get_error(params.error_code, params.error)
 
     # TODO implement
 
@@ -731,10 +769,9 @@ def process_select_maestro(request_json):
 
 
 def process_get_processing_options(request_json):
-    not_found_fields_error = \
-            verify_required_fields(request_json, [ 'data' ])
-    if not_found_fields_error:
-        return not_found_fields_error
+    params = Parameters(request_json).contains('reader').contains_hex('data', 256)
+    if params.error_code:
+        return get_error(params.error_code, params.error)
 
     # TODO implement
 
