@@ -407,7 +407,10 @@ class BeIdCard:
 
 
     def select_coding_algorithm(self, key_selector):
-        # select RSASSA-PKCS1_v15 SHA256 algorithm (0x08)
+        '''
+        Select RSASSA-PKCS1_v15 SHA256 algorithm (0x08) with either the authentication or
+        the non repudiation private key.
+        '''
         # RSASSA-PKCS1_v15 without predefined padding algorithm (0x01) can also be selected but then
         # the data to sign must be EMSA-PKCS1-v1_5 encoded first. See EMSA_PKCS1_V1_5_ENCODE above.
         data, sw1, sw2 = self.__send_apdu([ 0x00, 0x22, 0x41, 0xB6, 0x05,
@@ -564,6 +567,14 @@ def verify_required_fields(request_json, fields):
         return None
 
 
+def verify_activation_token(token):
+    '''
+    Verify if the given token is valid.
+    '''
+    #TODO Not clear what the token contains or how it must be verified. For now always return valid.
+    return True
+
+
 def process_get_info():
     response = {}
     response['version'] = '2.0.2'
@@ -623,7 +634,7 @@ def compute_digital_signature(request_reader, request_hash, key_selector):
 
     is_authenticated = False
     retries_left = -1
-    if beid_card.select_coding_algorithm(key_selector):
+    if not key_selector or beid_card.select_coding_algorithm(key_selector):
         (is_authenticated, retries_left) = beid_card.authenticate_pin()
         signature = None
         if is_authenticated:
@@ -684,14 +695,6 @@ def process_verify_pin(request_json):
     if not request_reader:
         return get_error(99, 'No request received after 10 seconds')
 
-    card_readers = CardReaders()
-    card_reader = card_readers.find_reader(request_reader)
-    beid_card = BeIdCard(card_reader)
-    if not beid_card.card_reader:
-        return get_error(0, 'Card reader %s not found' % request_reader)
-    elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
-        return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
-
     return compute_digital_signature(request_reader, None, None)
 
 
@@ -704,14 +707,6 @@ def process_compute_signature(request_json):
     request_hash = request_json['hash'] if 'hash' in request_json else None
     if not request_reader or not request_hash:
         return get_error(99, 'No request received after 10 seconds')
-
-    card_readers = CardReaders()
-    card_reader = card_readers.find_reader(request_reader)
-    beid_card = BeIdCard(card_reader)
-    if not beid_card.card_reader:
-        return get_error(0, 'Card reader %s not found' % request_reader)
-    elif not beid_card.connection or not beid_card.applet_selected or not beid_card.get_instance:
-        return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
 
     return compute_digital_signature(request_reader, request_hash, NON_REPUDIATION_KEY)
 
@@ -728,45 +723,79 @@ def process_compute_sign_challenge(request_json):
                                                         % (request_json, request_json['cmd']))
 
 
-request = read_native_message()
-response_json = {}
+def process_select_maestro(request_json):
+    # TODO implement
 
-try:
-    request_json = json.loads(request)
+    return get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
+                                                        % (request_json, request_json['cmd']))
 
-    if 'activationToken' in request_json:
-        # TODO request_json['activationToken'] must be checked, but it is not clear what it
-        # contains. If it is not correct the application should stop here immediately and send
-        # response_json = get_error(10, 'Activation required')
-        pass
 
-    if 'cmd' not in request_json:
-        # the browser extension blocks this case
+def process_get_processing_options(request_json):
+    not_found_fields_error = \
+            verify_required_fields(request_json, [ 'data' ])
+    if not_found_fields_error:
+        return not_found_fields_error
+
+    # TODO implement
+
+    return get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
+                                                        % (request_json, request_json['cmd']))
+
+
+def process_read_record(request_json):
+    # TODO implement
+
+    return get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
+                                                        % (request_json, request_json['cmd']))
+
+
+def main():
+    request = read_native_message()
+    response_json = {}
+
+    try:
+        request_json = json.loads(request)
+
+        if 'activationToken' in request_json and \
+           not verify_activation_token(request_json['activationToken']):
+            response_json = get_error(10, 'Activation required')
+        elif 'cmd' not in request_json:
+            # the browser extension blocks this case
+            response_json = get_error(99, 'No request received after 10 seconds')
+        elif request_json['cmd'] == 'GET_INFO':
+            response_json = process_get_info()
+        elif request_json['cmd'] == 'GET_READERS':
+            response_json = process_get_readers()
+        elif request_json['cmd'] == 'READ_FILE':
+            response_json = process_read_file(request_json)
+        elif request_json['cmd'] == 'COMPUTE_AUTHENTICATION':
+            response_json = process_compute_authentication(request_json)
+        elif request_json['cmd'] == 'PIN_PAD_AVAILABLE':
+            response_json = process_pin_pad_available(request_json)
+        elif request_json['cmd'] == 'VERIFY_PIN':
+            response_json = process_verify_pin(request_json)
+        elif request_json['cmd'] == 'COMPUTE_SIGNATURE':
+            response_json = process_compute_signature(request_json)
+        elif request_json['cmd'] == 'COMPUTE_SIGN_CHALLENGE':
+            response_json = process_compute_sign_challenge(request_json)
+        elif request_json['cmd'] == 'SELECT_MAESTRO':
+            response_json = process_select_maestro(request_json)
+        elif request_json['cmd'] == 'GET_PROCESSING_OPTIONS':
+            response_json = process_get_processing_options(request_json)
+        elif request_json['cmd'] == 'READ_RECORD':
+            response_json = process_read_record(request_json)
+        else:
+            response_json = get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
+                                                            % (request, request_json['cmd']))
+    except json.decoder.JSONDecodeError:
         response_json = get_error(99, 'No request received after 10 seconds')
-    elif request_json['cmd'] == 'GET_INFO':
-        response_json = process_get_info()
-    elif request_json['cmd'] == 'GET_READERS':
-        response_json = process_get_readers()
-    elif request_json['cmd'] == 'READ_FILE':
-        response_json = process_read_file(request_json)
-    elif request_json['cmd'] == 'COMPUTE_AUTHENTICATION':
-        response_json = process_compute_authentication(request_json)
-    elif request_json['cmd'] == 'PIN_PAD_AVAILABLE':
-        response_json = process_pin_pad_available(request_json)
-    elif request_json['cmd'] == 'VERIFY_PIN':
-        response_json = process_verify_pin(request_json)
-    elif request_json['cmd'] == 'COMPUTE_SIGNATURE':
-        response_json = process_compute_signature(request_json)
-    elif request_json['cmd'] == 'COMPUTE_SIGN_CHALLENGE':
-        response_json = process_compute_sign_challenge(request_json)
-    else:
-        response_json = get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
-                                                        % (request, request_json['cmd']))
-except json.decoder.JSONDecodeError:
-    response_json = get_error(99, 'No request received after 10 seconds')
-except Exception as e:
-    log(str(e))
-    # any other exception - exit gracefully
-    response_json = get_error(99, 'No request received after 10 seconds')
+    except Exception as e:
+        log(str(e))
+        # any other exception - exit gracefully
+        response_json = get_error(99, 'No request received after 10 seconds')
 
-send_native_message(json.dumps(response_json))
+    send_native_message(json.dumps(response_json))
+
+
+if __name__ == "__main__":
+    main()
