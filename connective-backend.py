@@ -739,7 +739,7 @@ def process_verify_pin(request_json):
 
 
 def process_compute_signature(request_json):
-    params = Parameters(request_json).contains('reader').contains_hash('hash')
+    params = Parameters(request_json).contains('reader').contains_hex('hash', 100)
     if params.error_code:
         return get_error(params.error_code, params.error)
 
