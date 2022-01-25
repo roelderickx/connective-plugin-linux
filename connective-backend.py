@@ -538,7 +538,7 @@ class Parameters:
 
     def __verify_field_is_hex(self, field, maxlen):
         value = self.message[field]
-        if len(value) > maxlen or any([ c for c in value if (c not in '0123456789ABCDEF') ]):
+        if len(value) > maxlen or any([ c for c in value if (c.upper() not in '0123456789ABCDEF') ]):
             if field == 'fileId':
                 self.error_code = 3
             else:
@@ -549,7 +549,7 @@ class Parameters:
     def __verify_field_is_valid_hash(self, field):
         value = self.message[field]
         validlen = [ 40, 64, 128 ]
-        if len(value) not in validlen or any([ c for c in value if (c not in '0123456789ABCDEF') ]):
+        if len(value) not in validlen or any([ c for c in value if (c.upper() not in '0123456789ABCDEF') ]):
             self.error_code = 7
             self.error = 'Invalid hash [%s]; should be either 20, 32 or 64 bytes' % value
 
@@ -739,7 +739,7 @@ def process_verify_pin(request_json):
 
 
 def process_compute_signature(request_json):
-    params = Parameters(request_json).contains('reader').contains_hex('hash', 100)
+    params = Parameters(request_json).contains('reader').contains_hash('hash')
     if params.error_code:
         return get_error(params.error_code, params.error)
 
