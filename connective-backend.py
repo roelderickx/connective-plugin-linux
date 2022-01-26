@@ -105,20 +105,24 @@ class NumpadWindow(tk.Frame):
 
 
 
+UNKNOWN_CARD = 0
+BEID_CARD = 1
+MAESTRO_CARD = 2
+
 class CardReaderFactory:
     def __init__(self):
         self.card_readers = smartcard.System.readers()
 
 
-    def __detect_card(self, card_reader):
-        # do we have a be-eid card?
-        beid_card = BeIdCard(card_reader)
-        if beid_card.is_card_present():
-            return beid_card
-        # do we have a maestro card?
-        maestro_card = MaestroCard(card_reader)
-        if maestro_card.is_card_present():
-            return maestro_card
+    def __detect_card(self, card_reader, card_type=None):
+        if not card_type or card_type == BEID_CARD:
+            beid_card = BeIdCard(card_reader)
+            if beid_card.is_card_present():
+                return beid_card
+        if not card_type or card_type == MAESTRO_CARD:
+            maestro_card = MaestroCard(card_reader)
+            if maestro_card.is_card_present():
+                return maestro_card
         # otherwise we have either an unsupported card or no card at all
         return BaseCard(card_reader)
 
@@ -142,11 +146,11 @@ class CardReaderFactory:
         return reader_list
 
 
-    def find_reader(self, reader_name):
+    def find_reader(self, reader_name, card_type):
         card_reader_list = [ r for r in self.card_readers if r.name == reader_name]
         if len(card_reader_list) > 0:
             card_reader = card_reader_list[0]
-            return self.__detect_card(card_reader)
+            return self.__detect_card(card_reader, card_type)
         else:
             return None
 
@@ -177,7 +181,7 @@ class BaseCard:
 
 
     def get_connective_card_type(self):
-        return 0
+        return UNKNOWN_CARD
 
 
     def _verify_atr(self):
@@ -279,7 +283,7 @@ class BeIdCard(BaseCard):
 
 
     def get_connective_card_type(self):
-        return 1
+        return BEID_CARD
 
 
     def _verify_atr(self):
@@ -462,7 +466,7 @@ class BeIdCard(BaseCard):
         # RSASSA-PKCS1_v15 without predefined padding algorithm (0x01) can also be selected but then
         # the data to sign must be EMSA-PKCS1-v1_5 encoded first. See EMSA_PKCS1_V1_5_ENCODE above.
         data, sw1, sw2 = self._send_apdu([ 0x00, 0x22, 0x41, 0xB6, 0x05,
-                                            0x04, 0x80, 0x08, 0x84, key_selector ])
+                                           0x04, 0x80, 0x08, 0x84, key_selector ])
         if sw1 == 0x90 and sw2 == 0x00:
             return True
         else:
@@ -530,8 +534,8 @@ class BeIdCard(BaseCard):
             if len(numpad.pincode) > 0:
                 # verify pincode
                 data, sw1, sw2 = self._send_apdu([ 0x00, 0x20, 0x00, 0x01, 0x08,
-                                                    0x20 + len(numpad.pincode) ] + \
-                                                    numpad.get_pincode_as_hex() + [ 0xFF ])
+                                                   0x20 + len(numpad.pincode) ] + \
+                                                   numpad.get_pincode_as_hex() + [ 0xFF ])
 
         if sw1 == 0x63 and sw2 >= 0xC0 and sw2 <= 0xCF:
             # PIN incorrect - untested
@@ -577,7 +581,7 @@ class MaestroCard(BaseCard):
 
 
     def get_connective_card_type(self):
-        return 2
+        return MAESTRO_CARD
 
 
     def _verify_atr(self):
@@ -610,9 +614,13 @@ class Parameters:
             self.error = 'Message [%s] misses a field named [%s]' % (json.dumps(self.message), field)
 
 
+    def __string_is_hex(self, string):
+        return not any([ char for char in string if (char.upper() not in '0123456789ABCDEF') ])
+
+
     def __verify_field_is_hex(self, field, maxlen):
         value = self.message[field]
-        if len(value) > maxlen or any([ c for c in value if (c.upper() not in '0123456789ABCDEF') ]):
+        if len(value) > maxlen or not self.__string_is_hex(value):
             if field == 'fileId':
                 self.error_code = 3
             else:
@@ -622,8 +630,7 @@ class Parameters:
 
     def __verify_field_is_valid_hash(self, field):
         value = self.message[field]
-        validlen = [ 40, 64, 128 ]
-        if len(value) not in validlen or any([ c for c in value if (c.upper() not in '0123456789ABCDEF') ]):
+        if len(value) not in [ 40, 64, 128 ] or not self.__string_is_hex(value):
             self.error_code = 7
             self.error = 'Invalid hash [%s]; should be either 20, 32 or 64 bytes' % value
 
@@ -721,7 +728,7 @@ def process_read_file(request_json):
     request_file_id = request_json['fileId']
 
     card_reader_factory = CardReaderFactory()
-    card_reader = card_reader_factory.find_reader(request_reader)
+    card_reader = card_reader_factory.find_reader(request_reader, BEID_CARD)
     if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
     elif not isinstance(card_reader, BeIdCard) or not card_reader.is_card_present():
@@ -740,7 +747,7 @@ def process_read_file(request_json):
 
 def compute_signature(request_reader, request_hash, key_selector):
     card_reader_factory = CardReaderFactory()
-    card_reader = card_reader_factory.find_reader(request_reader)
+    card_reader = card_reader_factory.find_reader(request_reader, BEID_CARD)
     if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
     elif not isinstance(card_reader, BeIdCard) or not card_reader.is_card_present():
@@ -788,7 +795,7 @@ def process_pin_pad_available(request_json):
     request_reader = request_json['reader']
 
     card_reader_factory = CardReaderFactory()
-    card_reader = card_reader_factory.find_reader(request_reader)
+    card_reader = card_reader_factory.find_reader(request_reader, BEID_CARD)
     if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
     elif not isinstance(card_reader, BeIdCard) or not card_reader.is_card_present():
@@ -816,21 +823,6 @@ def process_compute_signature(request_json):
     return compute_signature(request_json['reader'], request_json['hash'], NON_REPUDIATION_KEY)
 
 
-def process_compute_sign_challenge(request_json):
-    params = Parameters(request_json) \
-        .contains('reader') \
-        .contains('language') \
-        .contains('transaction') \
-        .contains_hex('hash', 100)
-    if params.error_code:
-        return get_error(params.error_code, params.error)
-
-    # TODO implement
-
-    return get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
-                                                        % (request_json, request_json['cmd']))
-
-
 def process_select_maestro(request_json):
     params = Parameters(request_json).contains('reader')
     if params.error_code:
@@ -839,7 +831,7 @@ def process_select_maestro(request_json):
     request_reader = request_json['reader']
 
     card_reader_factory = CardReaderFactory()
-    card_reader = card_reader_factory.find_reader(request_reader)
+    card_reader = card_reader_factory.find_reader(request_reader, MAESTRO_CARD)
     if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
     elif not isinstance(card_reader, MaestroCard) or not card_reader.is_card_present():
@@ -864,6 +856,21 @@ def process_get_processing_options(request_json):
 
 def process_read_record(request_json):
     params = Parameters(request_json).contains('reader').contains('record').contains('sfi')
+    if params.error_code:
+        return get_error(params.error_code, params.error)
+
+    # TODO implement
+
+    return get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
+                                                        % (request_json, request_json['cmd']))
+
+
+def process_compute_sign_challenge(request_json):
+    params = Parameters(request_json) \
+        .contains('reader') \
+        .contains('language') \
+        .contains('transaction') \
+        .contains_hex('hash', 100)
     if params.error_code:
         return get_error(params.error_code, params.error)
 
@@ -900,14 +907,14 @@ def main():
             response_json = process_verify_pin(request_json)
         elif request_json['cmd'] == 'COMPUTE_SIGNATURE':
             response_json = process_compute_signature(request_json)
-        elif request_json['cmd'] == 'COMPUTE_SIGN_CHALLENGE':
-            response_json = process_compute_sign_challenge(request_json)
         elif request_json['cmd'] == 'SELECT_MAESTRO':
             response_json = process_select_maestro(request_json)
         elif request_json['cmd'] == 'GET_PROCESSING_OPTIONS':
             response_json = process_get_processing_options(request_json)
         elif request_json['cmd'] == 'READ_RECORD':
             response_json = process_read_record(request_json)
+        elif request_json['cmd'] == 'COMPUTE_SIGN_CHALLENGE':
+            response_json = process_compute_sign_challenge(request_json)
         else:
             response_json = get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
                                                             % (request, request_json['cmd']))
