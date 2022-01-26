@@ -600,6 +600,14 @@ class MaestroCard(BaseCard):
         return self._applet_response
 
 
+    def get_processing_options(self):
+        data, sw1, sw2 = self._send_apdu([ 0x80, 0xA8, 0x00, 0x00, 0x02, 0x83, 0x00 ])
+        if sw1 == 0x90 and sw2 == 0x00:
+            return smartcard.util.toHexString(data).replace(' ', ''), '9000'
+        else:
+            return None, '%02x%02x' % (sw1, sw2)
+
+
 
 class Parameters:
     def __init__(self, message):
@@ -848,10 +856,23 @@ def process_get_processing_options(request_json):
     if params.error_code:
         return get_error(params.error_code, params.error)
 
-    # TODO implement
+    request_reader = request_json['reader']
 
-    return get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
-                                                        % (request_json, request_json['cmd']))
+    card_reader_factory = CardReaderFactory()
+    card_reader = card_reader_factory.find_reader(request_reader, MAESTRO_CARD)
+    if not card_reader:
+        return get_error(0, 'Card reader %s not found' % request_reader)
+    elif not isinstance(card_reader, MaestroCard) or not card_reader.is_card_present():
+        return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
+
+    data, swcode = card_reader.get_processing_options()
+
+    if data:
+        response = {}
+        response['data'] = data
+        return response
+    else:
+        return get_error(11, 'SW CODE: 0x0000%s' % swcode)
 
 
 def process_read_record(request_json):
