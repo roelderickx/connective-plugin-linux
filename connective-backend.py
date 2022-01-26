@@ -930,10 +930,7 @@ def process_compute_sign_challenge(request_json):
     if params.error_code:
         return get_error(params.error_code, params.error)
 
-    # TODO implement
-
-    return get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
-                                                        % (request_json, request_json['cmd']))
+    return get_error(8, 'Failed to determine sign challenge features (0x0) (0x0)')
 
 
 def main():
