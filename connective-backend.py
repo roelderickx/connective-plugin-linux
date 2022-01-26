@@ -605,7 +605,15 @@ class MaestroCard(BaseCard):
         if sw1 == 0x90 and sw2 == 0x00:
             return smartcard.util.toHexString(data).replace(' ', ''), '9000'
         else:
-            return None, '%02x%02x' % (sw1, sw2)
+            return None, '%02X%02X' % (sw1, sw2)
+
+
+    def read_record(self, sfi, record):
+        data, sw1, sw2 = self._send_apdu([ 0x00, 0xB2, record, (sfi << 3) + 4, 0x00 ])
+        if sw1 == 0x90 and sw2 == 0x00:
+            return smartcard.util.toHexString(data).replace(' ', ''), '9000'
+        else:
+            return None, '%02X%02X' % (sw1, sw2)
 
 
 
@@ -876,14 +884,41 @@ def process_get_processing_options(request_json):
 
 
 def process_read_record(request_json):
-    params = Parameters(request_json).contains('reader').contains('record').contains('sfi')
+    params = Parameters(request_json).contains('reader').contains('sfi').contains('record')
     if params.error_code:
         return get_error(params.error_code, params.error)
 
-    # TODO implement
+    request_reader = request_json['reader']
 
-    return get_error(99, 'Error handling JSON message [%s]. Unknown command [%s]' \
-                                                        % (request_json, request_json['cmd']))
+    # The Connective application sets the value to 0 for non-numerical input
+    # but since we can predict the outcome there is no need to send the APDU
+    sfi = 0
+    try:
+        sfi = int(request_json['sfi'])
+    except ValueError:
+        return get_error(11, 'SW CODE: 0x00006A82')
+
+    record = 0
+    try:
+        record = int(request_json['record'])
+    except ValueError:
+        return get_error(11, 'SW CODE: 0x00006A86')
+
+    card_reader_factory = CardReaderFactory()
+    card_reader = card_reader_factory.find_reader(request_reader, MAESTRO_CARD)
+    if not card_reader:
+        return get_error(0, 'Card reader %s not found' % request_reader)
+    elif not isinstance(card_reader, MaestroCard) or not card_reader.is_card_present():
+        return get_error(99, 'error calling SCardConnect (0x80100069) (0x0)')
+
+    data, swcode = card_reader.read_record(sfi, record)
+
+    if data:
+        response = {}
+        response['data'] = data
+        return response
+    else:
+        return get_error(11, 'SW CODE: 0x0000%s' % swcode)
 
 
 def process_compute_sign_challenge(request_json):
