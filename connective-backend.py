@@ -162,6 +162,7 @@ class BaseCard:
         self._connection = None
         self._atr = None
         self._applet_response = None
+        self._6c_delay = 0
 
         self._connect()
         self._applet_selected = self._select_applet()
@@ -213,7 +214,7 @@ class BaseCard:
                     extra_data, sw1, sw2 = self._connection.transmit([ 0x00, 0xC0, 0x00, 0x00, sw2 ])
                     data.extend(extra_data)
             if sw1 == 0x6C:
-                time.sleep(self.__6c_delay / 1000)
+                time.sleep(self._6c_delay / 1000)
                 data, sw1, sw2 = self._connection.transmit(apdu[0:4] + [ sw2 ] + apdu[5:])
         return data, sw1, sw2
 
@@ -259,14 +260,13 @@ class BeIdCard(BaseCard):
         # Card data
         self.__serialnr = None
         self.__appletversion = None
-        self.__6c_delay = 0
         self.card_data = self.__get_card_data()
 
         if self.card_data:
             # disabled to maximally protect privacy
             #log('Card serial nr: %s' % smartcard.util.toHexString(self.__serialnr).replace(' ', ''))
             log('Card applet version: %x' % self.__appletversion)
-            log('Card 0x6C delay required: %d ms' % self.__6c_delay)
+            log('Card 0x6C delay required: %d ms' % self._6c_delay)
 
         # Card reader ioctls, to be detected
         self.__ioctls_detected = False
@@ -328,7 +328,7 @@ class BeIdCard(BaseCard):
                     data, sw1, sw2 = self._send_apdu([ 0x80, 0xE4, 0x00, 0x01, 0x1F ])
 
                 if data[22] == 0x00 and data[23] == 0x01:
-                    self.__6c_delay = 50
+                    self._6c_delay = 50
             else:
                 return None
 
