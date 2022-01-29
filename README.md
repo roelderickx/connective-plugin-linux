@@ -10,6 +10,8 @@ At the moment there is only support for Belgian electronic identity cards. You'r
 
 There is also one security feature which is not implemented, because the algorithm is unknown. Whether this [security through obscurity](https://en.wikipedia.org/wiki/Security_through_obscurity) feature is really improving the security or not is debatable, but you should be aware that your personal data may be sent to anyone on the internet when using this application.
 
+Although this never happened during testing, there were reports that the pincode was requested a second time before it was entered the first time. If this happens to you it requires hitting the ok button twice on the cardreader.
+
 ## Alternative
 
 You can find an alternative solution in the client-server directory. With this solution the browser plugin is installed in Linux, but all commands to the backend are sent over the network to a Windows machine where you should connect the card reader.
