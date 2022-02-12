@@ -1,6 +1,7 @@
 # connective-plugin-linux
 
-A replacement for the Connective Plugin which is used on several websites to log in or sign documents using a card reader and an electronic identity card. There is only official support for Windows and Mac, so this application is primarily focused on Linux support.
+A replacement for the Connective Browser Plugin which is used on several websites to log in or sign documents using a card reader and an electronic identity card. There is only official support for Windows and Mac, so this application is primarily focused on Linux support.
+Please note the distinction with the Connective SignID Software, this is not supported in this repository.
 
 ## Limitations
 
