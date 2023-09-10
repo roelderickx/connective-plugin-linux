@@ -208,6 +208,7 @@ class BaseCard:
 
     def _send_apdu(self, apdu):
         data, sw1, sw2 = self._connection.transmit(apdu)
+        log('sw1 0x%2x  sw2 0x%2x  data length %d' % (sw1, sw2, len(data)))
         if len(data) == 0:
             if sw1 == 0x61:
                 while sw1 == 0x61:
@@ -220,6 +221,7 @@ class BaseCard:
 
 
     def _select_applet(self):
+        log('select applet')
         applet_aid = self._get_applet_aid()
         if self._connection and applet_aid:
             data, sw1, sw2 = self._send_apdu(applet_aid)
@@ -300,6 +302,7 @@ class BeIdCard(BaseCard):
 
 
     def __get_instance(self):
+        log('get instance')
         if self._connection:
             data, sw1, sw2 = self._send_apdu(BELPIC_AID)
             if sw1 == 0x6A and sw2 in [ 0x82, 0x86 ]:
@@ -316,6 +319,7 @@ class BeIdCard(BaseCard):
 
 
     def __get_card_data(self):
+        log('get card data')
         if self._connection:
             # Get Card Data (compatible with all applets)
             data, sw1, sw2 = self._send_apdu([ 0x80, 0xE4, 0x00, 0x00, 0x1C ])
@@ -345,6 +349,7 @@ class BeIdCard(BaseCard):
         '''
         Selects the file at absolute path file_id in preparation of a call to read_selected_file()
         '''
+        log('select file')
         bin_file_id = smartcard.util.toBytes(file_id)
         request_data = [ 0x00, 0xA4, 0x08, 0x0C, len(bin_file_id) ] + bin_file_id
         data, sw1, sw2 = self._send_apdu(request_data)
@@ -358,6 +363,7 @@ class BeIdCard(BaseCard):
         '''
         Read the contents of the selected file. select_file() should have been called before.
         '''
+        log('read file')
         file_contents = []
         offset = 0
         is_eof = False
@@ -465,6 +471,7 @@ class BeIdCard(BaseCard):
         '''
         # RSASSA-PKCS1_v15 without predefined padding algorithm (0x01) can also be selected but then
         # the data to sign must be EMSA-PKCS1-v1_5 encoded first. See EMSA_PKCS1_V1_5_ENCODE above.
+        log('select coding algorithm')
         data, sw1, sw2 = self._send_apdu([ 0x00, 0x22, 0x41, 0xB6, 0x05,
                                            0x04, 0x80, 0x08, 0x84, key_selector ])
         if sw1 == 0x90 and sw2 == 0x00:
@@ -533,6 +540,7 @@ class BeIdCard(BaseCard):
 
             if len(numpad.pincode) > 0:
                 # verify pincode
+                log('verify pin')
                 data, sw1, sw2 = self._send_apdu([ 0x00, 0x20, 0x00, 0x01, 0x08,
                                                    0x20 + len(numpad.pincode) ] + \
                                                    numpad.get_pincode_as_hex() + [ 0xFF ])
@@ -556,6 +564,7 @@ class BeIdCard(BaseCard):
         Signs the given data using the connected card. A call to authenticate_pin() is required
         first to fulfill the access conditions.
         '''
+        log('sign')
         bin_data_to_sign = smartcard.util.toBytes(data_to_sign)
         request_data = [ 0x00, 0x2A, 0x9E, 0x9A, len(bin_data_to_sign) ] + \
                          bin_data_to_sign #+ [ 0x00 ]
