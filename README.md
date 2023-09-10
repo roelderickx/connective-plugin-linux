@@ -1,6 +1,7 @@
 # connective-plugin-linux
 
-A replacement for the Connective Plugin which is used on several websites to log in or sign documents using a card reader and an electronic identity card. There is only official support for Windows and Mac, so this application is primarily focused on Linux support.
+A replacement for the Connective Browser Plugin which is used on several websites to log in or sign documents using a card reader and an electronic identity card. There is only official support for Windows and Mac, so this application is primarily focused on Linux support.
+Please note the distinction with the Connective SignID Software, this is not supported in this repository.
 
 ## Limitations
 
@@ -45,7 +46,7 @@ This should be straightforward. Go to the `connective-downloads` directory creat
 
 This script will be started by your browser whenever the Connective Browser Plugin receives the command to do so and provides the functionality to use the card reader.
 
-Install the nativemessaging package and run `nativemessaging-install.py firefox` or `nativemessaging-install.py chrome` depending on your browser. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
+Install the nativemessaging package (`pip install nativemessaging`) and run `nativemessaging-install.py firefox` or `nativemessaging-install.py chrome` depending on your browser. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
 
 ## Troubleshooting
 
