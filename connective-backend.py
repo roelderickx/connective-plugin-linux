@@ -987,6 +987,7 @@ def main():
         # any other exception - exit gracefully
         response_json = get_error(99, 'No request received after 10 seconds')
 
+    time.sleep(0.1)
     send_native_message(json.dumps(response_json))
 
 
