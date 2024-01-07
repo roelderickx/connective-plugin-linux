@@ -28,7 +28,7 @@ You may still opt to use this solution if you can run Windows in a virtual machi
 The backend runs under Python, but you need to have a few modules installed:
 - [tkinter](https://docs.python.org/3/library/tkinter.html) to display messageboxes and dialogs while signing.
 - [pyscard](https://github.com/LudovicRousseau/pyscard) to communicate with the card reader.
-- [nativemessaging](https://github.com/Rayquaza01/nativemessaging) to install the backend, but this is not mandatory to run the code. If you know how to install the manifest for native messaging applications you can skip this requirement.
+- [nativemessaging-ng](https://github.com/roelderickx/nativemessaging-ng) to install the backend, but this is not mandatory to run the code. If you know how to install the manifest for native messaging applications you can skip this requirement.
 
 ## Installation
 
@@ -46,7 +46,7 @@ This should be straightforward. Go to the `connective-downloads` directory creat
 
 This script will be started by your browser whenever the Connective Browser Plugin receives the command to do so and provides the functionality to use the card reader.
 
-Install the nativemessaging package (`pip install nativemessaging`) and run `nativemessaging-install.py firefox` or `nativemessaging-install.py chrome` depending on your browser. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
+Install the nativemessaging-ng package (`pip install nativemessaging-ng`) and run `nativemessaging-install install firefox` or `nativemessaging-install install chrome` depending on your browser. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
 
 ## Troubleshooting
 
