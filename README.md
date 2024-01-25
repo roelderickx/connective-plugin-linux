@@ -42,13 +42,13 @@ To obtain the necessary files anyway run the `get_connective_plugin.py` script i
 
 This should be straightforward. Go to the `connective-downloads` directory created in the previous step, open `connective_signing_extension-1.0.5.xpi` in your web browser and follow the installation instructions.
 
-However, on Chrome this doesn't work. You need to install the extension from [the chrome web store](https://chromewebstore.google.com/detail/connective-signing-extens/kclpjmhngbacampgcdojmiedamjbgjjm?utm_source=chrome-app-launcher-info-dialog).
+However, on Google Chrome this doesn't work. You need to install the extension from [the chrome web store](https://chromewebstore.google.com/detail/connective-signing-extens/kclpjmhngbacampgcdojmiedamjbgjjm?utm_source=chrome-app-launcher-info-dialog).
 
 ### Installing the backend
 
 This script will be started by your browser whenever the Connective Browser Plugin receives the command to do so and provides the functionality to use the card reader.
 
-Install the nativemessaging-ng package (`pip install nativemessaging-ng`) and run `nativemessaging-install install firefox` or `nativemessaging-install install chrome` depending on your browser. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
+Install the nativemessaging-ng package (`pip install nativemessaging-ng`) and run `nativemessaging-install install firefox`, `nativemessaging-install install chromium` or `nativemessaging-install install chrome` depending on your browser. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
 
 ## Troubleshooting
 
