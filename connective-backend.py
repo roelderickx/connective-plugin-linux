@@ -291,7 +291,8 @@ class BeIdCard(BaseCard):
         # ref: http://ludovic.rousseau.free.fr/softwares/pcsc-tools/smartcard_list.txt
         return self._atr in ['3B9894400AA503010101AD1310',
                              '3B9813400AA503010101AD1311',
-                             '3B989540FFD000480101AD1321']
+                             '3B989540FFD000480101AD1321',
+                             '3B7F96000080318065B085040120120FFF829000']
 
 
     def _get_applet_aid(self):
