@@ -40,7 +40,9 @@ To obtain the necessary files anyway run the `get_connective_plugin.py` script i
 
 ### Installing the browser plugin
 
-This should be straightforward. Go to the `connective-downloads` directory created in the previous step, open `connective_signing_extension-1.0.4.xpi` in your web browser and follow the installation instructions.
+This should be straightforward. Go to the `connective-downloads` directory created in the previous step, open `connective_signing_extension-1.0.5.xpi` in your web browser and follow the installation instructions.
+
+However, on Chrome this doesn't work. You need to install the extension from [the chrome web store](https://chromewebstore.google.com/detail/connective-signing-extens/kclpjmhngbacampgcdojmiedamjbgjjm?utm_source=chrome-app-launcher-info-dialog).
 
 ### Installing the backend
 
