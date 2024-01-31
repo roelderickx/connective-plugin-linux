@@ -166,6 +166,7 @@ class BaseCard:
         self._6c_delay = 0
 
         self._connect()
+        self._applet_selected = not initialize_card
         if initialize_card:
             self._applet_selected = self._select_applet()
 
