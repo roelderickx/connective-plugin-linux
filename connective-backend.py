@@ -110,17 +110,18 @@ BEID_CARD = 1
 MAESTRO_CARD = 2
 
 class CardReaderFactory:
-    def __init__(self):
+    def __init__(self, initialize_card=True):
         self.card_readers = smartcard.System.readers()
+        self.initialize_card = initialize_card
 
 
     def __detect_card(self, card_reader, card_type=None):
         if not card_type or card_type == BEID_CARD:
-            beid_card = BeIdCard(card_reader)
+            beid_card = BeIdCard(card_reader, self.initialize_card)
             if beid_card.is_card_present():
                 return beid_card
         if not card_type or card_type == MAESTRO_CARD:
-            maestro_card = MaestroCard(card_reader)
+            maestro_card = MaestroCard(card_reader, self.initialize_card)
             if maestro_card.is_card_present():
                 return maestro_card
         # otherwise we have either an unsupported card or no card at all
@@ -157,7 +158,7 @@ class CardReaderFactory:
 
 
 class BaseCard:
-    def __init__(self, card_reader):
+    def __init__(self, card_reader, initialize_card):
         self._card_reader = card_reader
         self._connection = None
         self._atr = None
@@ -165,7 +166,8 @@ class BaseCard:
         self._6c_delay = 0
 
         self._connect()
-        self._applet_selected = self._select_applet()
+        if initialize_card:
+            self._applet_selected = self._select_applet()
 
 
     def __del__(self):
@@ -253,14 +255,16 @@ NON_REPUDIATION_KEY = 0x83
 
 # ref https://github.com/Fedict/eid-mw/blob/master/doc/sdk/documentation/Applet%201.7%20eID%20Cards/Public_Belpic_Applet_v1%207_Ref_Manual%20-%20A01.pdf
 class BeIdCard(BaseCard):
-    def __init__(self, card_reader):
-        super().__init__(card_reader)
+    def __init__(self, card_reader, initialize_card):
+        super().__init__(card_reader, initialize_card)
         self.get_instance = self.__get_instance()
 
         # Card data
         self.__serialnr = None
         self.__appletversion = None
-        self.card_data = self.__get_card_data()
+        self.card_data = None
+        if initialize_card:
+            self.card_data = self.__get_card_data()
 
         if self.card_data:
             # disabled to maximally protect privacy
@@ -577,8 +581,8 @@ class BeIdCard(BaseCard):
 
 
 class MaestroCard(BaseCard):
-    def __init__(self, card_reader):
-        super().__init__(card_reader)
+    def __init__(self, card_reader, initialize_card):
+        super().__init__(card_reader, initialize_card)
 
 
     def get_connective_card_type(self):
@@ -744,7 +748,7 @@ def process_read_file(request_json):
     request_reader = request_json['reader']
     request_file_id = request_json['fileId']
 
-    card_reader_factory = CardReaderFactory()
+    card_reader_factory = CardReaderFactory(initialize_card=False)
     card_reader = card_reader_factory.find_reader(request_reader, BEID_CARD)
     if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
@@ -763,7 +767,7 @@ def process_read_file(request_json):
 
 
 def compute_signature(request_reader, request_hash, key_selector):
-    card_reader_factory = CardReaderFactory()
+    card_reader_factory = CardReaderFactory(initialize_card=False)
     card_reader = card_reader_factory.find_reader(request_reader, BEID_CARD)
     if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
@@ -811,7 +815,7 @@ def process_pin_pad_available(request_json):
 
     request_reader = request_json['reader']
 
-    card_reader_factory = CardReaderFactory()
+    card_reader_factory = CardReaderFactory(initialize_card=False)
     card_reader = card_reader_factory.find_reader(request_reader, BEID_CARD)
     if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
@@ -847,7 +851,7 @@ def process_select_maestro(request_json):
 
     request_reader = request_json['reader']
 
-    card_reader_factory = CardReaderFactory()
+    card_reader_factory = CardReaderFactory(initialize_card=False)
     card_reader = card_reader_factory.find_reader(request_reader, MAESTRO_CARD)
     if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
@@ -867,7 +871,7 @@ def process_get_processing_options(request_json):
 
     request_reader = request_json['reader']
 
-    card_reader_factory = CardReaderFactory()
+    card_reader_factory = CardReaderFactory(initialize_card=False)
     card_reader = card_reader_factory.find_reader(request_reader, MAESTRO_CARD)
     if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
@@ -905,7 +909,7 @@ def process_read_record(request_json):
     except ValueError:
         return get_error(11, 'SW CODE: 0x00006A86')
 
-    card_reader_factory = CardReaderFactory()
+    card_reader_factory = CardReaderFactory(initialize_card=False)
     card_reader = card_reader_factory.find_reader(request_reader, MAESTRO_CARD)
     if not card_reader:
         return get_error(0, 'Card reader %s not found' % request_reader)
