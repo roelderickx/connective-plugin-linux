@@ -392,23 +392,32 @@ class BeIdCard(BaseCard):
         if self.__ioctls_detected:
             return
 
-        features = self._connection.control(smartcard.scard.SCARD_CTL_CODE(3400), [])
-        i = 0
-        while i < len(features):
-            feature = features[i:i+6]
-            self.__ioctl_verify_start = \
-                self.__verify_feature(feature, CCID_VERIFY_START, self.__ioctl_verify_start)
-            self.__ioctl_verify_finish = \
-                self.__verify_feature(feature, CCID_VERIFY_FINISH, self.__ioctl_verify_finish)
-            self.__ioctl_verify_direct = \
-                self.__verify_feature(feature, CCID_VERIFY_DIRECT, self.__ioctl_verify_direct)
-            self.__ioctl_change_start = \
-                self.__verify_feature(feature, CCID_CHANGE_START, self.__ioctl_change_start)
-            self.__ioctl_change_finish = \
-                self.__verify_feature(feature, CCID_CHANGE_FINISH, self.__ioctl_change_finish)
-            self.__ioctl_change_direct = \
-                self.__verify_feature(feature, CCID_CHANGE_DIRECT, self.__ioctl_change_direct)
-            i += 6
+        try:
+            features = self._connection.control(smartcard.scard.SCARD_CTL_CODE(3400), [])
+            i = 0
+            while i < len(features):
+                feature = features[i:i+6]
+                self.__ioctl_verify_start = \
+                    self.__verify_feature(feature, CCID_VERIFY_START, self.__ioctl_verify_start)
+                self.__ioctl_verify_finish = \
+                    self.__verify_feature(feature, CCID_VERIFY_FINISH, self.__ioctl_verify_finish)
+                self.__ioctl_verify_direct = \
+                    self.__verify_feature(feature, CCID_VERIFY_DIRECT, self.__ioctl_verify_direct)
+                self.__ioctl_change_start = \
+                    self.__verify_feature(feature, CCID_CHANGE_START, self.__ioctl_change_start)
+                self.__ioctl_change_finish = \
+                    self.__verify_feature(feature, CCID_CHANGE_FINISH, self.__ioctl_change_finish)
+                self.__ioctl_change_direct = \
+                    self.__verify_feature(feature, CCID_CHANGE_DIRECT, self.__ioctl_change_direct)
+                i += 6
+        except:
+            # Card reader ioctls cannot be detected: assume no keypad
+            self.__ioctl_verify_start = False
+            self.__ioctl_verify_finish = False
+            self.__ioctl_verify_direct = False
+            self.__ioctl_change_start = False
+            self.__ioctl_change_finish = False
+            self.__ioctl_change_direct = False
 
         self.__ioctls_detected = True
 
