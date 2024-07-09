@@ -5,7 +5,7 @@ Please note the distinction with the Connective SignID Software, this is not sup
 
 ## Limitations
 
-This application is tested with a [VASCO Digipass 870](https://www.onespan.com/products/card-readers/digipass-870), which has a keypad, and an [Alcor Micro AU9560](https://www.alcorlink.com/product-AU9560-USB.html) (sold under the Mya brand) without keypad. It should work as well for any other card reader supported by Linux.
+This application is tested with a [VASCO Digipass 870](https://www.onespan.com/products/card-readers/digipass-870), which has a keypad, and an [Alcor Micro AU9560](https://www.alcorlink.com/product-AU9560-USB.html) (sold under the Mya brand) without keypad. It was also reported to work with an Alcor Micro AU9540 (built-in a HP EliteBook 840 14 inch G9 Notebook PC). It should work as well for any other card reader supported by Linux.
 
 At the moment there is only support for Belgian electronic identity cards. You're welcome to create a pull request to add support for other cards but keep in mind I am unable to test this before merging.
 
@@ -48,7 +48,14 @@ However, on Google Chrome this doesn't work. You need to install the extension f
 
 This script will be started by your browser whenever the Connective Browser Plugin receives the command to do so and provides the functionality to use the card reader.
 
-Install the nativemessaging-ng package (`pip install nativemessaging-ng`) and run `nativemessaging-install install firefox`, `nativemessaging-install install chromium` or `nativemessaging-install install chrome` depending on your browser. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
+First install the required dependencies (tested on Ubuntu 22.04):
+
+```
+$ sudo apt-get install libpcsclite-dev python3-tk
+$ pip3 install nativemessaging-ng swig smartcard pyscard 
+```
+
+Now run `nativemessaging-install install firefox`, `nativemessaging-install install chromium` or `nativemessaging-install install chrome` depending on your browser. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
 
 ## Troubleshooting
 
