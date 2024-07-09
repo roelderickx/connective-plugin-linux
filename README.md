@@ -5,7 +5,7 @@ Please note the distinction with the Connective SignID Software, this is not sup
 
 ## Limitations
 
-This application is tested with a [VASCO Digipass 870](https://www.onespan.com/products/card-readers/digipass-870), which has a keypad, and an [Alcor Micro AU9560](https://www.alcorlink.com/product-AU9560-USB.html) (sold under the Mya brand) without keypad. It was also reported to work with an Alcor Micro AU9540 (built-in a HP EliteBook 840 14 inch G9 Notebook PC). It should work as well for any other card reader supported by Linux.
+This application is tested with a [VASCO Digipass 870](https://www.onespan.com/products/card-readers/digipass-870), which has a keypad, and an [Alcor Micro AU9560](https://www.alcorlink.com/product-AU9560-USB.html) (sold under the Mya brand) without keypad. It should work as well for any other card reader supported by Linux, you can have a look at the [confirmed working configurations](https://github.com/roelderickx/connective-plugin-linux/discussions/20) or add your own if missing.
 
 At the moment there is only support for Belgian electronic identity cards. You're welcome to create a pull request to add support for other cards but keep in mind I am unable to test this before merging.
 
@@ -30,6 +30,15 @@ The backend runs under Python, but you need to have a few modules installed:
 - [pyscard](https://github.com/LudovicRousseau/pyscard) to communicate with the card reader.
 - [nativemessaging-ng](https://github.com/roelderickx/nativemessaging-ng) to install the backend, but this is not mandatory to run the code. If you know how to install the manifest for native messaging applications you can skip this requirement.
 
+> **Note (eid support)** The default browsers supplied in snap- or Flatpak based distributions (for example Ubuntu) are [known to not be compatible with the Belgian eID software](https://eid.belgium.be/en/faq/firefox-how-do-i-install-and-activate-eid-add#7636). Therefore, make sure to manually download a standalone version of [Firefox](https://www.mozilla.org/en-US/firefox/linux/) or [Chrome](https://www.google.com/chrome/?platform=linux).
+
+On Ubuntu (tested with 22.04) you can install the necessary modules using the following commands:
+
+```
+$ sudo apt-get install libpcsclite-dev python3-tk
+$ pip3 install nativemessaging-ng swig smartcard pyscard
+```
+
 ## Installation
 
 ### Obtaining the plugin
@@ -48,16 +57,7 @@ However, on Google Chrome this doesn't work. You need to install the extension f
 
 This script will be started by your browser whenever the Connective Browser Plugin receives the command to do so and provides the functionality to use the card reader.
 
-First install the required dependencies (tested on Ubuntu 22.04):
-
-```
-$ sudo apt-get install libpcsclite-dev python3-tk
-$ pip3 install nativemessaging-ng swig smartcard pyscard 
-```
-
-> **Note (eid support).** The default browsers supplied with Ubuntu (Firefox and Chromium) are distributed via snap and are [known to not be compatible with the Belgian eID software](https://eid.belgium.be/en/faq/firefox-how-do-i-install-and-activate-eid-add#7636). Therefore, make sure to manually download a non-snap version of [Firefox](https://www.mozilla.org/en-US/firefox/linux/) or [Chrome](https://www.google.com/chrome/?platform=linux).
-
-Now run `nativemessaging-install install firefox`, `nativemessaging-install install chromium` or `nativemessaging-install install chrome` depending on your browser. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
+Change to the root directory of this repository and run `nativemessaging-install install [browser]`, where \[browser\] must be replaced by either `firefox`, `chrome` or `chromium`, whichever is applicable. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install` with the appropriate parameter in that case.
 
 ## Troubleshooting
 
