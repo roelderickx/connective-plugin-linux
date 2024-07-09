@@ -55,6 +55,8 @@ $ sudo apt-get install libpcsclite-dev python3-tk
 $ pip3 install nativemessaging-ng swig smartcard pyscard 
 ```
 
+> **Note (eid support).** The default browsers supplied with Ubuntu (Firefox and Chromium) are distributed via snap and are [known to not be compatible with the Belgian eID software](https://eid.belgium.be/en/faq/firefox-how-do-i-install-and-activate-eid-add#7636). Therefore, make sure to manually download a non-snap version of [Firefox](https://www.mozilla.org/en-US/firefox/linux/) or [Chrome](https://www.google.com/chrome/?platform=linux).
+
 Now run `nativemessaging-install install firefox`, `nativemessaging-install install chromium` or `nativemessaging-install install chrome` depending on your browser. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
 
 ## Troubleshooting
