@@ -1,1 +1,2 @@
 pyscard>=2.0.2
+requests
