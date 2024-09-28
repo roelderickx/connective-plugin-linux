@@ -32,11 +32,18 @@ The backend runs under Python, but you need to have a few modules installed:
 
 > **Note (eid support)** The default browsers supplied in snap- or Flatpak based distributions (for example Ubuntu) are [known to not be compatible with the Belgian eID software](https://eid.belgium.be/en/faq/firefox-how-do-i-install-and-activate-eid-add#7636). Therefore, make sure to manually download a standalone version of [Firefox](https://www.mozilla.org/en-US/firefox/linux/) or [Chrome](https://www.google.com/chrome/?platform=linux).
 
-On Ubuntu (tested with 22.04) you can install the necessary modules using the following commands:
+When installing the required modules it is preferable to install the packages from your distribution in stead of pip modules. On Ubuntu 22.04 you can install the necessary modules using the following commands:
 
 ```
 $ sudo apt-get install libpcsclite-dev python3-tk
 $ pip3 install nativemessaging-ng swig smartcard pyscard
+```
+
+Or on Ubuntu 24.04:
+
+```
+$ sudo apt-get install libpcsclite-dev python3-pyscard python3-tk
+$ pip3 install nativemessaging-ng
 ```
 
 ## Installation
