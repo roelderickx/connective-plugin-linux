@@ -13,6 +13,7 @@ import tkinter.font as font
 
 import smartcard
 import smartcard.util
+import smartcard.System
 
 DEBUG = True
 
