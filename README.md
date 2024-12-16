@@ -9,9 +9,7 @@ This application is tested with a [VASCO Digipass 870](https://www.onespan.com/p
 
 At the moment there is only support for Belgian electronic identity cards. You're welcome to create a pull request to add support for other cards but keep in mind I am unable to test this before merging.
 
-There is also one security feature which is not implemented, because the algorithm is unknown. Whether this [security through obscurity](https://en.wikipedia.org/wiki/Security_through_obscurity) feature is really improving the security or not is debatable, but you should be aware that your personal data may be sent to anyone on the internet when using this application.
-
-Although this never happened during testing, there were reports that the pincode was requested a second time before it was entered the first time. If this happens to you it requires hitting the ok button twice on the cardreader.
+There is also one security feature which is not implemented, because the algorithm is unknown. Whether this [security through obscurity](https://en.wikipedia.org/wiki/Security_through_obscurity) feature is really improving the security or not is debatable, but you should be aware that [your personal data may be sent to anyone on the internet](https://github.com/roelderickx/connective-plugin-linux/issues/12) when using this application.
 
 ## Alternative
 
@@ -64,7 +62,7 @@ However, on Google Chrome this doesn't work. You need to install the extension f
 
 This script will be started by your browser whenever the Connective Browser Plugin receives the command to do so and provides the functionality to use the card reader.
 
-Change to the root directory of this repository and run `nativemessaging-install install [browser]`, where \[browser\] must be replaced by either `firefox`, `chrome` or `chromium`, whichever is applicable. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-install` with the appropriate parameter in that case.
+Change to the root directory of this repository and run `nativemessaging-ng install [browser]`, where \[browser\] must be replaced by either `firefox`, `chrome` or `chromium`, whichever is applicable. This will install a modified version of `native-manifest.json` in your browser's configuration, containing the full path to `connective-backend.py`. Keep this in mind when you want to move the backend to another location, you will need to re-run `nativemessaging-ng` with the appropriate parameter in that case.
 
 ## Troubleshooting
 
