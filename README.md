@@ -44,6 +44,14 @@ $ sudo apt-get install libpcsclite-dev python3-pyscard python3-tk
 $ pip3 install nativemessaging-ng
 ```
 
+Most distributions will complain the environment is externally managed by a package manager when running the pip command. Since nativemessaging-ng is not required for running the backend script you can set it up temporarily in a virtual environment:
+```
+python -m venv venv-nm
+source venv-nm/bin/activate
+pip install -r optional-requirements.txt
+```
+After installation of the backend (see [below](#installing-the-backend)) you can deactivate the virtual environment using the `deactivate` command. You may opt to remove the created venv-nm directory when installation succeeded.
+
 ## Installation
 
 ### Obtaining the plugin
