@@ -1,1 +1,1 @@
-nativemessaging-ng>=1.3.2
+nativemessaging-ng>=1.3.3
