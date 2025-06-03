@@ -369,7 +369,7 @@ class BeIdCard(BaseCard):
             if sw1 == 0x90 and sw2 == 0x00:
                 file_contents.extend(data)
                 offset += len(data)
-            elif sw1 == 0x6B and sw2 == 0x00:
+            elif (sw1 == 0x6B and sw2 == 0x00) or (sw1 == 0x69 and sw2 == 0x86):
                 # offset beyond eof
                 is_eof = True
             else:
