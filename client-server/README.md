@@ -4,7 +4,7 @@ This is the alternative version of connective-plugin-linux, using two networked 
 
 ## Requirements
 
-Both the proxy and the host applications run under Python. Installing the proxy requires the [nativemessaging](https://github.com/Rayquaza01/nativemessaging) module, but this is not mandatory to run the code. If you know how to install the manifest for native messaging applications you can skip this requirement.
+Both the proxy and the host applications run under Python. Installing the proxy requires the [nativemessaging-ng](https://github.com/roelderickx/nativemessaging-ng) module, but this is not mandatory to run the code. If you know how to install the manifest for native messaging applications you can skip this requirement.
 
 ## Installation
 
@@ -22,7 +22,7 @@ This script will be started by your browser whenever the Connective Browser Plug
 
 First of all, open the file `connective-proxy.py` and modify the HOST variable on top to the ip address or hostname of the machine where the card reader is connected.
 
-Next, install the nativemessaging package and run `nativemessaging-install.py firefox` or `nativemessaging-install.py chrome` depending on your browser. Make sure you run this command from the client-server directory to install the correct native messaging application. A modified version of `native-manifest.json` will be installed in your browser's configuration, containing the full path to `connective-proxy.py`. Keep this in mind when you want to move the proxy to another location, you will need to re-run `nativemessaging-install.py` with the appropriate parameter in that case.
+Next, install the nativemessaging-ng package and run `nativemessaging-ng install firefox` or `nativemessaging-ng install chrome` depending on your browser. Make sure you run this command from the client-server directory to install the correct native messaging application. A modified version of `native-manifest.json` will be installed in your browser's configuration, containing the full path to `connective-proxy.py`. Keep this in mind when you want to move the proxy to another location, you will need to re-run `nativemessaging-ng install` with the appropriate parameter in that case.
 
 ### Installing the host
 
