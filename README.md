@@ -44,6 +44,13 @@ $ sudo apt-get install libpcsclite-dev python3-pyscard python3-tk
 $ pip3 install nativemessaging-ng
 ```
 
+Or on Fedora 42 (see issue [#34](https://github.com/roelderickx/connective-plugin-linux/issues/34) for more details):
+
+```
+$ sudo dnf install -y pcsc-lite-devel python3-pyscard python3-tkinter python3-requests python3-devel gcc pip3
+$ pip3 install nativemessaging-ng
+```
+
 Most distributions will complain the environment is externally managed by a package manager when running the pip command. Since nativemessaging-ng is not required for running the backend script you can set it up temporarily in a virtual environment:
 ```
 python -m venv venv-nm
