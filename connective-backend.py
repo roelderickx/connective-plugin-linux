@@ -731,7 +731,7 @@ def verify_activation_token(token):
 def process_get_info():
     response = {}
     response['version'] = '2.0.2'
-    response['binVersion'] = '2.0.9'
+    response['binVersion'] = '2.0.10'
     return response
 
 
