@@ -19,6 +19,11 @@ DEBUG = True
 
 MAX_PIN_LENGTH = 12
 
+# To Use the Numpad pincode entry style set the parameter below to False Original backend.
+# To Use the input box pincode entry style set this parameter to True.
+INPUTWINDOW = False
+
+# Numpad pincode entry style class.
 class NumpadWindow(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
@@ -88,6 +93,117 @@ class NumpadWindow(tk.Frame):
 
     def get_pincode(self):
         return self.pincode
+
+
+    def get_pincode_as_hex(self):
+        pincode_list = [ ]
+        # add pincode in high and low nibbles
+        for index, digit in enumerate(self.pincode):
+            if index % 2 == 0:
+                pincode_list.append(int(digit) * 16 + 15)
+            else:
+                pincode_list[int(index / 2)] += int(digit) - 15
+        # pad with 0xFF
+        while len(pincode_list) < 6:
+            pincode_list.append(0xFF)
+
+        return pincode_list
+
+
+
+# Input Box pincode entry style class.
+class InputWindow(tk.Frame):
+    def __init__(self, master=None):
+        tk.Frame.__init__(self, master)
+        self.master = master
+        self.pack(fill=tk.BOTH, expand=1, padx=20, pady=20)
+        self.pincode = ''
+
+        self.master.wm_title("Connective")
+        self.master.resizable(False, False)
+
+        # Validation-registration: Only nummeric chars maybe entered
+        vcmd = (self.register(self._validate_numeric), '%P')
+
+        # Large fonts for better readability
+        large_font = font.Font(size=16)
+        button_font = font.Font(size=14, weight='bold')
+
+        # Label above input field
+        self.label_info = tk.Label(self, text="Enter ID card pincode:", font=large_font)
+        self.label_info.grid(row=0, column=0, columnspan=3, pady=(0, 10), sticky="w")
+
+        # Entry field - Starts by default as hidden (*)
+        self.entry_pincode = tk.Entry(
+            self, 
+            font=large_font, 
+            width=15, 
+            show='*', 
+            validate='key', 
+            validatecommand=vcmd
+        )
+        self.entry_pincode.grid(row=1, column=0, columnspan=2, ipady=5, padx=(0, 5), sticky="we")
+        self.entry_pincode.focus_set() # Sets cursor in entry field
+
+        # Show / Hide button (Eye functionality)
+        self.btn_toggle = tk.Button(self, text="Show", font=button_font, width=6, command=self.toggle_visibility)
+        self.btn_toggle.grid(row=1, column=2, ipady=2, sticky="nsew")
+
+        # Frame for action buttons (Clear & OK)
+        actions_frame = tk.Frame(self)
+        actions_frame.grid(row=2, column=0, columnspan=3, pady=(15, 0), sticky="we")
+        actions_frame.columnconfigure(0, weight=1)
+        actions_frame.columnconfigure(1, weight=1)
+
+        # Clear button (C)
+        button_c = tk.Button(actions_frame, text="Clear", font=button_font, bg="#d9534f", fg="white", command=self.click_button_c)
+        button_c.grid(row=0, column=0, padx=(0, 5), ipady=5, sticky="we")
+
+        # Ok button
+        button_ok = tk.Button(actions_frame, text="OK", font=button_font, bg="#5cb85c", fg="white", command=self.click_button_ok)
+        button_ok.grid(row=0, column=1, padx=(5, 0), ipady=5, sticky="we")
+
+        # Link keyboard inputs (Enter, Backspace, Esc) to some functions.
+        self.master.bind("<Return>", lambda e: self.click_button_ok())
+        self.master.bind("<Escape>", lambda e: self.close_window())
+
+
+    def _validate_numeric(self, new_value):
+        # Check for only nummeric input and not exceeding max pincode lenght
+        if not new_value:
+            self.pincode = ''
+            return True
+        if new_value.isdigit() and len(new_value) <= MAX_PIN_LENGTH:
+            self.pincode = new_value
+            return True
+        return False
+
+
+    def toggle_visibility(self):
+        # toggle between visible or hidden input field
+        if self.entry_pincode.cget('show') == '*':
+            self.entry_pincode.config(show='')
+            self.btn_toggle.config(text='Hide')
+        else:
+            self.entry_pincode.config(show='*')
+            self.btn_toggle.config(text='Show')
+
+
+    def click_button_c(self):
+        # Clears the entire input field
+        self.entry_pincode.delete(0, tk.END)
+        self.pincode = ''
+
+
+    def click_button_ok(self):
+        # ads the pincode and runs the further code in backend then closes it
+        self.master.destroy()
+
+
+    def close_window(self):
+        # closes with esc button
+        self.click_button_c()
+        self.master.destroy()
 
 
     def get_pincode_as_hex(self):
@@ -557,7 +673,12 @@ class BeIdCard(BaseCard):
             sw2 = data[1]
         else:
             root = tk.Tk()
-            numpad = NumpadWindow(root)
+            if INPUTWINDOW:
+                # Use Input Window Class
+                numpad = InputWindow(root)
+            else:
+                # Use Numpad Window Class
+                numpad = NumpadWindow(root)
             root.mainloop()
 
             if len(numpad.pincode) > 0:
