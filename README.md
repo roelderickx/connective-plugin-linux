@@ -9,8 +9,6 @@ This application is tested with a [VASCO Digipass 870](https://www.onespan.com/p
 
 At the moment there is only support for Belgian electronic identity cards. You're welcome to create a pull request to add support for other cards but keep in mind I am unable to test this before merging.
 
-There is also one security feature which is not implemented, because the algorithm is unknown. Whether this [security through obscurity](https://en.wikipedia.org/wiki/Security_through_obscurity) feature is really improving the security or not is debatable, but you should be aware that [your personal data may be sent to anyone on the internet](https://github.com/roelderickx/connective-plugin-linux/issues/12) when using this application.
-
 ## Alternative
 
 You can find an alternative solution in the client-server directory. With this solution the browser plugin is installed in Linux, but all commands to the backend are sent over the network to a Windows machine where you should connect the card reader.
