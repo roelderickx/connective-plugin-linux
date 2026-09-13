@@ -62,11 +62,11 @@ After installation of the backend (see [below](#installing-the-backend)) you can
 
 #### Firefox
 
-install the extension from [the firefox addon store](https://addons.mozilla.org/en-US/firefox/addon/connective-signing-ext/).
+Install the extension from [the firefox addon store](https://addons.mozilla.org/en-US/firefox/addon/connective-signing-ext/).
 
 #### Google Chrome
 
-install the extension from [the chrome web store](https://chromewebstore.google.com/detail/connective-signing-extens/kclpjmhngbacampgcdojmiedamjbgjjm?utm_source=chrome-app-launcher-info-dialog).
+Install the extension from [the chrome web store](https://chromewebstore.google.com/detail/connective-signing-extens/kclpjmhngbacampgcdojmiedamjbgjjm?utm_source=chrome-app-launcher-info-dialog).
 
 #### Other browsers
 
