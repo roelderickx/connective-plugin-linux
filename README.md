@@ -1,7 +1,6 @@
 # connective-plugin-linux
 
-A replacement for the Connective Browser Plugin which is used on several websites to log in or sign documents using a card reader and an electronic identity card. There is only official support for Windows and Mac, so this application is primarily focused on Linux support.
-Please note the distinction with the Connective SignID Software, this is not supported in this repository.
+A replacement for the Nitro SignID Browser Plugin (previously called Connective Browser Plugin) which is used on several websites to log in or sign documents using a card reader and an electronic identity card. Officially there is only support for Windows and Mac, so this application is primarily focused on Linux support.
 
 ## Limitations
 
@@ -59,17 +58,23 @@ After installation of the backend (see [below](#installing-the-backend)) you can
 
 ## Installation
 
-### Obtaining the plugin
-
-Trying to install the Connective browser package under Linux results in a message `This operating system is not supported`. You are not even able to download anything.
-
-To obtain the necessary files anyway run the `get_connective_plugin.py` script included in this repository. A subdirectory `connective-downloads` will be created, containing the installer for both the browser plugin and the windows native application. The native application is only required for the client-server alternative solution.
-
 ### Installing the browser plugin
 
-This should be straightforward. Go to the `connective-downloads` directory created in the previous step, open `connective_signing_extension-1.0.5.xpi` in your web browser and follow the installation instructions.
+#### Firefox
 
-However, on Google Chrome this doesn't work. You need to install the extension from [the chrome web store](https://chromewebstore.google.com/detail/connective-signing-extens/kclpjmhngbacampgcdojmiedamjbgjjm?utm_source=chrome-app-launcher-info-dialog).
+install the extension from [the firefox addon store](https://addons.mozilla.org/en-US/firefox/addon/connective-signing-ext/).
+
+#### Google Chrome
+
+install the extension from [the chrome web store](https://chromewebstore.google.com/detail/connective-signing-extens/kclpjmhngbacampgcdojmiedamjbgjjm?utm_source=chrome-app-launcher-info-dialog).
+
+#### Other browsers
+
+If no addon store exists for your browser you have to download and install the extension manually. Run the `get_connective_plugin.py` script included in this repository. A subdirectory `connective-downloads` will be created, containing the installer for the browser plugin.
+
+Installation should be straightforward. Go to the `connective-downloads` directory created in the previous step, open `connective_signing_extension-1.0.12.xpi` in your web browser and follow the installation instructions.
+
+Note that version 1.0.12 is not the latest version and does not work as provided. You need to update the plugin via the settings in your browser.
 
 ### Installing the backend
 
