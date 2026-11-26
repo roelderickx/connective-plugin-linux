@@ -84,4 +84,4 @@ Change to the root directory of this repository and run `nativemessaging-ng inst
 
 ## Troubleshooting
 
-Refer to the README.md file in the test directory for detailed information on how to verify your installation and where to find error messages.
+Refer to the README.md file in the test directory for detailed information on how to verify your installation and where to find error messages. Diagnostic output to stderr is disabled by default and can be enabled with `CONNECTIVE_DEBUG`; the same guide explains how sensitive values are redacted and how to run the redaction tests.

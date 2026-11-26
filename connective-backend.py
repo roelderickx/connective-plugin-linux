@@ -15,7 +15,7 @@ import smartcard
 import smartcard.util
 import smartcard.System
 
-DEBUG = True
+from safe_logging import debug_enabled, redact_native_message
 
 MAX_PIN_LENGTH = 12
 
@@ -825,7 +825,11 @@ class Parameters:
 
 
 def log(message):
-    if DEBUG:
+    """Write a diagnostic line to stderr, only when explicitly enabled.
+
+    Callers pass already redacted payloads; see safe_logging.py.
+    """
+    if debug_enabled():
         sys.stderr.write(message + '\n')
 
 
@@ -837,13 +841,13 @@ def read_native_message():
 
     text_length = struct.unpack('@I', text_length_bytes)[0]
     text = str(sys.stdin.buffer.read(text_length), 'utf-8')
-    log('IN ' + text)
+    log('IN ' + redact_native_message(text))
 
     return text
 
 
 def send_native_message(response):
-    log('OUT ' + response)
+    log('OUT ' + redact_native_message(response))
     response_bytes = bytes(response, 'utf-8')
     sys.stdout.buffer.write(struct.pack('@I', len(response_bytes)))
     sys.stdout.buffer.write(response_bytes)
