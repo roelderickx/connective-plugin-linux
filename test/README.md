@@ -28,7 +28,46 @@ If you are confident the installation of both the browser plugin and the `connec
 3. Make sure the cardreader is attached and click on _GET__READERS_. There is no need to modify the message so you can click _Send request_ right away. If the command succeeds, the reader textfield on top will be filled automatically. In case there is a failure you should look at the communication at the bottom and the browser log.
 4. You can now continue to test any other message. They should all return valid data without errors in the browser log.
 
+## Debug logging
+
+The backend writes nothing to stderr by default. This is deliberate: native
+messaging payloads can contain eID file contents (identity data), activation
+tokens and signature material, and the browser may retain stderr in its logs.
+
+To enable diagnostics without editing the source, set an environment variable
+before starting the backend:
+
+```
+CONNECTIVE_DEBUG=1 ../connective-backend.py < get_readers.txt
+```
+
+Accepted values are `1`, `true`, `yes` and `on` (case-insensitive, surrounding
+whitespace is ignored). Any other value, including an unset variable, leaves
+logging off.
+
+`connective-backend.py` imports `safe_logging.py` from the same directory. Keep
+the two files together when moving or installing the backend.
+
+Even when debug logging is enabled, payloads are redacted by `safe_logging.py`:
+
+- values of `activationToken`, `hash`, `signature`, `data`, `pin`, `pincode`,
+  `token`, `challenge`, `key`, `secret` and `privatekey` become `<redacted>`;
+- nested objects and lists are redacted recursively;
+- payloads that are not valid JSON become `<unparseable message omitted>`, so
+  a truncated request cannot leak data.
+
+Command names, reader names, error codes and validity flags are preserved. That
+is enough to troubleshoot the protocol without exposing identity or signature
+data. Exception text is still logged verbatim, so review a log before attaching
+it to a public bug report.
+
+The redaction rules have unit tests. Run them from the repository root with:
+
+```
+python3 -m unittest discover -s test -v
+```
+
 ## Bug reports
 
-If you encounter an error which you cannot resolve using the above information, please file a bug report. Explain in which stage of the logon or signing procedure the error happened and include the output of the browser log (or the script in case you were testing in a terminal window).
+If you encounter an error which you cannot resolve using the above information, please file a bug report. Explain in which stage of the logon or signing procedure the error happened and include the output of the browser log (or the script in case you were testing in a terminal window). Review the log first as described above.
 
